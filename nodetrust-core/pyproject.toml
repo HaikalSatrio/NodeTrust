@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "cryptography>=41"]  # cryptography: throwaway TLS certs for the SMTP tests
 
 [project.scripts]
 nodetrust = "nodetrust.cli:main"

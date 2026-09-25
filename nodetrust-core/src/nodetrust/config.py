@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     smtp_user: str | None = None
     smtp_password: SecretStr | None = None
     smtp_from: str = "nodetrust@localhost"
+    # PEM bundle to trust for a relay with a private CA. Certificates are always verified.
+    smtp_ca_file: Path | None = None
 
     # API surface hardening
     expose_api_docs: bool = False  # /docs and /openapi.json; enable for development only

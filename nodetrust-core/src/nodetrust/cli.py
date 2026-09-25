@@ -54,9 +54,12 @@ def cmd_worker(s: Settings, a) -> int:
     fetcher = Fetcher(db, transport, s.npm_registry_url, timeout=s.http_timeout_s, max_bytes=s.max_packument_bytes,
                       limiter=RateLimiter(s.fetch_rate_per_s))
     if s.smtp_host:
+        import ssl
+
         sender = SmtpSender(s.smtp_host, s.smtp_port, s.smtp_user,
                             s.smtp_password.get_secret_value() if s.smtp_password else None, s.smtp_from,
-                            allow_network=s.allow_network)
+                            allow_network=s.allow_network,
+                            ssl_context=ssl.create_default_context(cafile=s.smtp_ca_file) if s.smtp_ca_file else None)
     else:
         sender = OutboxSender(s.alert_outbox_dir, s.smtp_from)
     while True:

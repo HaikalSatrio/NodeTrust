@@ -11,7 +11,8 @@
 - Triage: a project admin confirms or rejects; the decision is audited.
 - One channel (e-mail) in the MVP. The default sender writes .eml files to an
   outbox directory (offline); SMTP is used only when configured AND network is
-  explicitly allowed.
+  explicitly allowed. SMTP always upgrades with STARTTLS and verifies the server
+  certificate before sending credentials; there is no plaintext fallback.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ import json
 import logging
 import smtplib
 import sqlite3
+import ssl
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from pathlib import Path
@@ -60,10 +62,13 @@ class SmtpSender:
     name = "smtp"
 
     def __init__(self, host: str, port: int, user: str | None, password: str | None, sender: str, *,
-                 allow_network: bool, timeout: float = 20.0):
+                 allow_network: bool, timeout: float = 20.0, ssl_context: ssl.SSLContext | None = None):
         if not allow_network:
             raise RuntimeError("SMTP delivery requires NODETRUST_ALLOW_NETWORK=true")
         self.host, self.port, self.user, self.password, self.sender, self.timeout = host, port, user, password, sender, timeout
+        # smtplib's own default for starttls() does not verify the certificate, which would hand
+        # the SMTP password to anyone in the middle. Always verify (system CAs unless told otherwise).
+        self.ssl_context = ssl_context or ssl.create_default_context()
 
     def send(self, to, subject, body, headers):
         msg = EmailMessage()
@@ -72,7 +77,7 @@ class SmtpSender:
             msg[k] = v
         msg.set_content(body)
         with smtplib.SMTP(self.host, self.port, timeout=self.timeout) as s:
-            s.starttls()
+            s.starttls(context=self.ssl_context)
             if self.user and self.password:
                 s.login(self.user, self.password)
             s.send_message(msg)
