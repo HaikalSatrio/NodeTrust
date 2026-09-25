@@ -3,7 +3,8 @@
     python scripts/check.py
 
 1. byte-compile every Python file (syntax errors),
-2. run the test suite (tests block all non-loopback network access),
+2. run the test suite (tests block all non-loopback network access), plus the local e2e suite
+   when nodetrust-ci is cloned next to this repository,
 3. scan tracked-looking files for committed secrets,
 4. check the dashboard has no external resources (CSP 'self' only).
 Exit code is non-zero if any step fails.
@@ -66,9 +67,15 @@ def dashboard_is_self_contained() -> list[str]:
 def main() -> int:
     ok = True
     print("[1/4] compileall")
-    ok &= compileall.compile_dir(str(ROOT / "src"), quiet=1) and compileall.compile_dir(str(ROOT / "tests"), quiet=1)
+    ok &= all(compileall.compile_dir(str(ROOT / d), quiet=1) for d in ("src", "tests", "e2e"))
     print("[2/4] tests")
     ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=ROOT) == 0
+    if (ROOT.parent / "nodetrust-ci" / "src" / "nodetrust_ci" / "cli.py").is_file():
+        print("      e2e (nodetrust-ci found next to this repo)")
+        ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "no:asyncio", "e2e"],
+                              cwd=ROOT) == 0
+    else:
+        print("      e2e skipped: clone nodetrust-ci next to this repo to run it")
     print("[3/4] secret scan")
     hits = secret_scan()
     for h in hits:

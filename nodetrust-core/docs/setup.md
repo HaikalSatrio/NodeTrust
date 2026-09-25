@@ -11,6 +11,9 @@ cp .env.example .env                  # set NODETRUST_ADMIN_TOKEN; never commit 
 python scripts/check.py               # must print PASS
 ```
 
+With `nodetrust-ci` cloned in the same parent directory, `check.py` also runs the local end-to-end suite
+(`e2e/`: the real CI client against a running core over 127.0.0.1). Without it, that step is skipped.
+
 Python 3.11+ is required. Dependencies: FastAPI, uvicorn, pydantic (+settings), httpx, networkx, pytest.
 No secret is embedded in code or fixtures. The quality gate scans for them.
 
