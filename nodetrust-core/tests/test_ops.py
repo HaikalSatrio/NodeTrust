@@ -101,3 +101,31 @@ def test_demo_dashboard_endpoints_work_with_demo_keys(tmp_path):
                      headers={"Authorization": f"Bearer {out['projects']['demo-clean']['admin_key']}"}).json()
     assert rep["vulnerabilities"][0]["ids"] == ["NTDEMO-VULN-0001"]
     assert rep["vulnerabilities"][0]["is_evidence_of_compromise"] is False
+
+
+def _as_installed(monkeypatch, root: Path) -> None:
+    # pip install . puts cli.py in site-packages, far from the repo's fixtures/ directory.
+    import nodetrust.cli
+
+    monkeypatch.setattr(nodetrust.cli, "__file__", str(root / "site-packages" / "nodetrust" / "cli.py"))
+    monkeypatch.setenv("NODETRUST_DB_PATH", str(root / "demo.db"))
+
+
+def test_installed_demo_cli_uses_fixtures_in_working_dir(tmp_path, monkeypatch):
+    import shutil
+
+    from nodetrust.cli import main
+
+    _as_installed(monkeypatch, tmp_path)
+    shutil.copytree(FIXTURES, tmp_path / "app" / "fixtures" / "demo")
+    monkeypatch.chdir(tmp_path / "app")  # the Docker image's WORKDIR holds fixtures/
+    assert main(["demo"]) == 0
+
+
+def test_installed_demo_cli_without_fixtures_fails_clearly(tmp_path, monkeypatch, capsys):
+    from nodetrust.cli import main
+
+    _as_installed(monkeypatch, tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert main(["demo"]) == 2
+    assert "--fixtures" in capsys.readouterr().err

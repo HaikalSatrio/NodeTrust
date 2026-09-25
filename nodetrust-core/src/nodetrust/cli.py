@@ -173,10 +173,24 @@ def cmd_purge(s: Settings, a) -> int:
     return 0
 
 
+def _default_demo_fixtures() -> Path:
+    # A source checkout keeps them at <repo>/fixtures/demo. An installed package (pip install ., the
+    # Docker image) has no repo around it, so fall back to ./fixtures/demo (the image's WORKDIR).
+    for base in (Path(__file__).resolve().parents[2], Path.cwd()):
+        if (base / "fixtures" / "demo").is_dir():
+            return base / "fixtures" / "demo"
+    return Path.cwd() / "fixtures" / "demo"
+
+
 def cmd_demo(s: Settings, a) -> int:
     from nodetrust.demo import seed_demo
 
-    _print(seed_demo(_db(s), Path(a.fixtures)))
+    fixtures = Path(a.fixtures) if a.fixtures else _default_demo_fixtures()
+    if not (fixtures / "packuments").is_dir():
+        print(f"Demo fixtures not found at {fixtures}. Pass --fixtures <nodetrust-core>/fixtures/demo.",
+              file=sys.stderr)
+        return 2
+    _print(seed_demo(_db(s), fixtures))
     return 0
 
 
@@ -217,7 +231,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--days", type=int)
     sp.set_defaults(fn=cmd_purge)
     sp = sub.add_parser("demo", help="seed an offline, clearly-labelled demo dataset")
-    sp.add_argument("--fixtures", default=str(Path(__file__).resolve().parents[2] / "fixtures" / "demo"))
+    sp.add_argument("--fixtures", help="demo fixture directory (default: the repo's or ./fixtures/demo)")
     sp.set_defaults(fn=cmd_demo)
     return p
 
