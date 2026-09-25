@@ -66,3 +66,18 @@ Schema revision 1 → 2 (`fetch_job.priority`), migrated automatically on start 
 Still open, and deliberately left for NT-041 (Haikal's security audit): an independent review of auth, parser
 limits, CI trust boundary and secret handling. This follow-up is not a substitute for it. The long write
 transaction during scan evaluation is documented in `docs/limitations.md` (NT-043/NT-036).
+
+## 7. Pre-review pass (2026-09-26, later)
+
+Work done so the handover to Haikal is complete. Each change is a separate commit on `brian/mvp-review`.
+
+| Check | Found | Fix | Evidence |
+|---|---|---|---|
+| Clean clone + fresh venv + `pip install .` (offline, `--no-index`) | `nodetrust demo` crashed from an installed package (fixture path resolved inside site-packages). The Docker image would have hit the same bug. | Falls back to `./fixtures/demo`. Otherwise exits 2 with a hint. | `test_installed_demo_cli_*`; install/serve smoke from the clone |
+| e2e suite placement | `e2e/` sat outside both repos, so a reviewer would never receive it | Moved to `nodetrust-core/e2e/`. `check.py` runs it when `nodetrust-ci` is cloned alongside. | `check.py` output |
+| SMTP over a real SMTP conversation (loopback) | `starttls()` without a context does **not verify the certificate**, so a MITM could collect the SMTP password | Verifying context by default. `NODETRUST_SMTP_CA_FILE` for relays on a private CA. | `tests/test_smtp.py` (the untrusted-cert test fails against the old code) |
+| Real npm metadata (1,024 packuments from the local npm cache) | First ingest of a large package was quadratic. `react` took 595 s inside the fetcher's write transaction, blocking CI submissions. | `diff_versions()`: one sort per package, 1.1 s. Identical deltas on 6,448 real versions. | `docs/audit/real-data-check.md`, `test_batched_diff_is_fast_on_long_histories_and_matches_single` |
+| Keyboard-only walkthrough of the dashboard (headless Edge, demo data) | Focus lost after login/logout. Tabs had no arrow keys or `aria-controls`. Graph label ignored (no role). `aria-selected` on plain rows. Favicon 404. | Fixed. All controls were already reachable and had a focus ring. | commit `fix(NT-026)`. A screen-reader pass by a human is still needed. |
+| `docker compose config` | valid | – | – |
+
+Line endings are pinned to LF (`.gitattributes`) so Windows and Linux checkouts produce identical files.
