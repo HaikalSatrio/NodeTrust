@@ -1,0 +1,41 @@
+{
+ "_id": "ntdemo-cli",
+ "name": "ntdemo-cli",
+ "dist-tags": {
+  "latest": "0.3.0"
+ },
+ "maintainers": [
+  {
+   "name": "alice-demo"
+  }
+ ],
+ "time": {
+  "modified": "2026-06-15T10:00:00.000Z",
+  "0.3.0": "2026-06-15T10:00:00.000Z"
+ },
+ "versions": {
+  "0.3.0": {
+   "name": "ntdemo-cli",
+   "version": "0.3.0",
+   "dependencies": {
+    "ntdemo-date": "^1.0.0"
+   },
+   "maintainers": [
+    {
+     "name": "alice-demo"
+    }
+   ],
+   "_npmUser": {
+    "name": "alice-demo"
+   },
+   "dist": {
+    "integrity": "sha512-DEMO-ntdemo-cli-0.3.0"
+   },
+   "repository": {
+    "type": "git",
+    "url": "git+https://example.invalid/ntdemo-cli.git"
+   }
+  }
+ },
+ "description": "SYNTHETIC demo package - not a real npm package"
+}

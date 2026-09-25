@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # TODO(NT-040/NT-044): pin both actions to full commit SHAs; not done yet because the
+      # SHAs could not be looked up offline. Tags are mutable.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Quality gate (compile, tests, secret scan, dashboard CSP)
+        run: python scripts/check.py

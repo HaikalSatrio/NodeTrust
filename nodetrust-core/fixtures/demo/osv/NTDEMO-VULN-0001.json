@@ -1,0 +1,30 @@
+{
+ "id": "NTDEMO-VULN-0001",
+ "modified": "2026-08-01T00:00:00Z",
+ "published": "2026-07-20T00:00:00Z",
+ "aliases": [
+  "NTDEMO-CVE-0001"
+ ],
+ "summary": "SYNTHETIC demo vulnerability in ntdemo-date (not real)",
+ "affected": [
+  {
+   "package": {
+    "ecosystem": "npm",
+    "name": "ntdemo-date"
+   },
+   "ranges": [
+    {
+     "type": "SEMVER",
+     "events": [
+      {
+       "introduced": "0"
+      },
+      {
+       "fixed": "1.0.1"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

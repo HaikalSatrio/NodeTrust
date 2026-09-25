@@ -1,0 +1,23 @@
+{
+  "version": "rules-v1",
+  "status": "draft - heuristic weights proposed by Brian (NT-010), pending review by Haikal",
+  "disclaimer": "Scores are heuristic sums of weighted signals, clamped to 0..100. They are not probabilities of compromise and are not calibrated. NORMAL does not mean safe.",
+  "rules": [
+    {"id": "same_version_integrity_changed", "weight": 60,
+     "description": "More than one integrity hash observed for the same published version (npm forbids republishing)."},
+    {"id": "install_script_added", "weight": 35,
+     "description": "preinstall/install/postinstall hook present that the previous version did not have."},
+    {"id": "all_maintainers_replaced", "weight": 25,
+     "description": "No maintainer of the previous version remains on this version."},
+    {"id": "publisher_new_to_package", "weight": 20,
+     "description": "Publishing account never published an earlier version of this package."},
+    {"id": "dependency_on_new_package", "weight": 20, "per_item": true, "cap": 40,
+     "description": "Newly added dependency whose package first appeared on the registry within 30 days of this publish."},
+    {"id": "repository_changed", "weight": 15,
+     "description": "repository URL differs from the previous version."},
+    {"id": "maintainer_added", "weight": 10, "per_item": true, "cap": 20,
+     "description": "Maintainer present on this version but not on the previous one."},
+    {"id": "dependency_added", "weight": 5, "per_item": true, "cap": 15,
+     "description": "Dependency added compared with the previous version."}
+  ]
+}

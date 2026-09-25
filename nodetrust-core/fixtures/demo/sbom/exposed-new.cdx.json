@@ -1,0 +1,91 @@
+{
+ "bomFormat": "CycloneDX",
+ "specVersion": "1.5",
+ "version": 1,
+ "metadata": {
+  "component": {
+   "type": "application",
+   "name": "demo-exposed-new",
+   "bom-ref": "root"
+  }
+ },
+ "components": [
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-web@5.0.0",
+   "name": "ntdemo-web",
+   "version": "5.0.0",
+   "purl": "pkg:npm/ntdemo-web@5.0.0"
+  },
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-date@1.0.1",
+   "name": "ntdemo-date",
+   "version": "1.0.1",
+   "purl": "pkg:npm/ntdemo-date@1.0.1"
+  },
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-core@1.1.0",
+   "name": "ntdemo-core",
+   "version": "1.1.0",
+   "purl": "pkg:npm/ntdemo-core@1.1.0"
+  },
+  {
+   "type": "library",
+   "bom-ref": "@ntdemo/logger@3.0.1",
+   "name": "@ntdemo/logger",
+   "version": "3.0.1",
+   "purl": "pkg:npm/%40ntdemo/logger@3.0.1"
+  },
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-utils@2.1.1",
+   "name": "ntdemo-utils",
+   "version": "2.1.1",
+   "purl": "pkg:npm/ntdemo-utils@2.1.1"
+  },
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-helper-x@0.0.1",
+   "name": "ntdemo-helper-x",
+   "version": "0.0.1",
+   "purl": "pkg:npm/ntdemo-helper-x@0.0.1"
+  }
+ ],
+ "dependencies": [
+  {
+   "ref": "root",
+   "dependsOn": [
+    "ntdemo-web@5.0.0",
+    "ntdemo-date@1.0.1"
+   ]
+  },
+  {
+   "ref": "ntdemo-web@5.0.0",
+   "dependsOn": [
+    "ntdemo-core@1.1.0",
+    "@ntdemo/logger@3.0.1"
+   ]
+  },
+  {
+   "ref": "ntdemo-core@1.1.0",
+   "dependsOn": [
+    "ntdemo-utils@2.1.1",
+    "@ntdemo/logger@3.0.1"
+   ]
+  },
+  {
+   "ref": "@ntdemo/logger@3.0.1",
+   "dependsOn": [
+    "ntdemo-utils@2.1.1"
+   ]
+  },
+  {
+   "ref": "ntdemo-utils@2.1.1",
+   "dependsOn": [
+    "ntdemo-helper-x@0.0.1"
+   ]
+  }
+ ]
+}

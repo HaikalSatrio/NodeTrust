@@ -1,0 +1,57 @@
+# Self-host (MVP): one API process + one worker on a shared SQLite volume (D02).
+# NOT yet verified: Docker was not running on the development machine and images
+# cannot be pulled offline. First run must be checked by a human (see docs/audit/NT-040-audit.md).
+#
+#   cp .env.example .env   # then set NODETRUST_ADMIN_TOKEN
+#   docker compose up --build
+#
+# The API binds to 127.0.0.1 only; put a TLS reverse proxy in front for remote CI access.
+services:
+  api:
+    build: .
+    command: ["nodetrust", "serve", "--host", "0.0.0.0", "--port", "8080", "--i-know-this-is-exposed"]
+    env_file: .env
+    environment:
+      NODETRUST_DB_PATH: /data/nodetrust.db
+      NODETRUST_ALERT_OUTBOX_DIR: /data/outbox
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - nodetrust-data:/data
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/readyz', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build: .
+    command: ["nodetrust", "worker", "--interval", "30"]
+    env_file: .env
+    environment:
+      NODETRUST_DB_PATH: /data/nodetrust.db
+      NODETRUST_ALERT_OUTBOX_DIR: /data/outbox
+    volumes:
+      - nodetrust-data:/data
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Neo4j is the planned graph store (D02) but its adoption, version and GDS
+  # licensing are decided in NT-002/NT-013 (Haikal). Uncomment once agreed.
+  # neo4j:
+  #   image: neo4j:<pinned-version>
+  #   environment:
+  #     NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
+  #   ports: ["127.0.0.1:7474:7474", "127.0.0.1:7687:7687"]
+  #   volumes: [neo4j-data:/data]
+
+volumes:
+  nodetrust-data:
+  # neo4j-data:
