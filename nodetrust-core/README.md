@@ -9,7 +9,8 @@ alerts and the dashboard. The GitHub Action lives in [`nodetrust-ci`](../nodetru
 
 > **Status: MVP in progress, not released.** Scope and policy follow the NT-001 draft (D01–D07), which is
 > still **under review**. Several graph and research components are minimal stand-ins until their owners'
-> tasks land. See [docs/limitations.md](docs/limitations.md) and the workspace `STATUS.md`.
+> tasks land. See [docs/limitations.md](docs/limitations.md) and the review handover
+> [docs/review/HANDOVER-haikal.md](docs/review/HANDOVER-haikal.md) (Indonesian).
 
 ## What it does
 
@@ -60,6 +61,7 @@ Network access is **off** unless `NODETRUST_ALLOW_NETWORK=true`.
 - [Setup](docs/setup.md) · [Architecture](docs/architecture.md) · [API & contract](docs/api.md)
 - [What CI sends](docs/data-sent.md) · [Scoring, forecast & validation status](docs/model-and-validation.md)
 - [Limitations](docs/limitations.md) · [Runbook](docs/runbook.md) · [Contributing](CONTRIBUTING.md)
+- [Real npm metadata check](docs/audit/real-data-check.md) · [Code audit](docs/audit/NT-040-audit.md)
 
 ## License
 
