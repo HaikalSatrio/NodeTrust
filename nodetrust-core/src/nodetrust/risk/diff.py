@@ -18,7 +18,7 @@ import sqlite3
 from dataclasses import asdict, dataclass, field
 
 from nodetrust.contracts import ECOSYSTEM_NPM
-from nodetrust.semver import parse_version, sort_versions
+from nodetrust.semver import SemverError, Version, parse_version, sort_versions
 
 
 @dataclass
@@ -71,6 +71,42 @@ def previous_version(con: sqlite3.Connection, name: str, version: str) -> str | 
     return lower[-1] if lower else None
 
 
+@dataclass(frozen=True)
+class _History:
+    base_version: str | None  # highest version with lower precedence
+    earlier_publishers: frozenset[str]  # publishers of all versions with lower precedence
+
+
+def _histories(con: sqlite3.Connection, name: str) -> dict[str, _History]:
+    """Base version and earlier publishers for every version of a package, from one sort.
+
+    Diffing each new version on its own re-sorted the whole history every time
+    (O(n^2 log n)); a first ingest of react (~2,900 versions) took ~10 minutes inside one
+    write transaction, blocking every other writer, including CI scan submissions.
+    """
+    parsed: list[tuple[Version, str, str | None]] = []
+    for r in con.execute("SELECT version, publisher FROM pkg_version WHERE ecosystem=? AND name=?",
+                         (ECOSYSTEM_NPM, name)):
+        try:
+            parsed.append((parse_version(r["version"]), r["version"], r["publisher"]))
+        except SemverError:
+            continue
+    parsed.sort(key=lambda t: t[0])  # stable, like sort_versions
+    out: dict[str, _History] = {}
+    base, publishers, i = None, set(), 0
+    while i < len(parsed):
+        j = i
+        while j < len(parsed) and parsed[j][0] == parsed[i][0]:  # equal precedence (build metadata only)
+            j += 1
+        group = parsed[i:j]
+        hist = _History(base, frozenset(publishers))
+        for _, v, _ in group:
+            out[v] = hist
+        publishers.update(pub for _, _, pub in group if pub)
+        base, i = group[-1][1], j
+    return out
+
+
 def _first_published(con, name) -> str | None:
     row = con.execute("SELECT MIN(published_at) AS t FROM pkg_version WHERE ecosystem=? AND name=? "
                       "AND published_at IS NOT NULL", (ECOSYSTEM_NPM, name)).fetchone()
@@ -89,10 +125,25 @@ def _days_between(a: str, b: str) -> float | None:
 
 
 def diff_version(con: sqlite3.Connection, name: str, version: str, *, new_package_days: float = 30.0) -> Delta:
+    return diff_versions(con, name, [version], new_package_days=new_package_days)[0]
+
+
+def diff_versions(con: sqlite3.Connection, name: str, versions, *, new_package_days: float = 30.0) -> list[Delta]:
+    """diff_version for several versions of one package, sorting its history once."""
+    histories = _histories(con, name)
+    return [_diff(con, name, v, histories, new_package_days) for v in versions]
+
+
+def _diff(con: sqlite3.Connection, name: str, version: str, histories: dict[str, _History],
+          new_package_days: float) -> Delta:
     cur = _row(con, name, version)
     if cur is None:
         raise KeyError(f"{name}@{version} not in graph")
-    base = previous_version(con, name, version)
+    hist = histories.get(version)
+    if hist is None:
+        parse_version(version)  # raises SemverError for an invalid version, as before
+        hist = _History(None, frozenset())
+    base = hist.base_version
     d = Delta(name=name, version=version, base_version=base, publisher=cur["publisher"],
               published_at=cur["published_at"])
     d.same_version_integrity_values = sorted(r["integrity"] for r in con.execute(
@@ -122,9 +173,7 @@ def diff_version(con: sqlite3.Connection, name: str, version: str, *, new_packag
         if (b["repository"] or None) != (cur["repository"] or None) and b["repository"]:
             d.repository_changed = {"from": b["repository"], "to": cur["repository"]}
         if cur["publisher"]:
-            earlier = {r["publisher"] for r in con.execute(
-                "SELECT publisher, version FROM pkg_version WHERE ecosystem=? AND name=? AND publisher IS NOT NULL",
-                (ECOSYSTEM_NPM, name)) if parse_version(r["version"]) < parse_version(version)}
+            earlier = hist.earlier_publishers
             d.publisher_new_to_package = bool(earlier) and cur["publisher"] not in earlier
         # new dependencies whose target package is itself very new
         for dep in d.deps_added:

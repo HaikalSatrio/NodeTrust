@@ -14,7 +14,7 @@ from nodetrust.registry.fetch import Fetcher, packument_url
 from nodetrust.registry.normalize import InvalidPackument, normalize_packument
 from nodetrust.registry.transport import (DisabledTransport, FakeTransport, NetworkDisabled, RateLimiter, Response,
                                           TransportError, fetch_with_retry)
-from nodetrust.risk.diff import diff_version
+from nodetrust.risk.diff import diff_version, diff_versions
 from nodetrust.risk.scoring import load_rules, score_delta
 
 REG = "https://registry.test"
@@ -294,6 +294,25 @@ def test_all_maintainers_replaced_and_repository_change(db):
         d = diff_version(con, "q", "1.0.1")
     rules = {r["rule"] for r in score_delta(d).reasons}
     assert {"all_maintainers_replaced", "repository_changed", "publisher_new_to_package", "maintainer_added"} <= rules
+
+
+def test_batched_diff_is_fast_on_long_histories_and_matches_single(db):
+    # react has ~2,900 versions; per-version re-sorting took ~10 minutes inside one write transaction.
+    vers = {f"1.{i // 100}.{i % 100}": {"publisher": "alice" if i < 1500 else "bob"} for i in range(2000)}
+    vers["1.0.0-rc.1"] = {"publisher": "carol"}
+    _ingest(db, packument("big", vers))
+    import time
+
+    with db.read() as con:
+        t = time.perf_counter()
+        deltas = {d.version: d for d in diff_versions(con, "big", list(vers))}
+        assert time.perf_counter() - t < 20
+        assert deltas["1.0.0"].base_version == "1.0.0-rc.1"  # prerelease sorts before its release
+        assert deltas["1.0.0-rc.1"].base_version is None
+        assert deltas["1.15.0"].base_version == "1.14.99"
+        assert deltas["1.15.0"].publisher_new_to_package and not deltas["1.15.1"].publisher_new_to_package
+        for v in ("1.0.0", "1.15.0", "1.19.99"):
+            assert diff_version(con, "big", v).to_dict() == deltas[v].to_dict()
 
 
 @pytest.mark.parametrize("score,tier", [(0, "NORMAL"), (40, "NORMAL"), (41, "WATCH"), (70, "WATCH"),

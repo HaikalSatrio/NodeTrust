@@ -20,7 +20,7 @@ from nodetrust.obs import correlation, get_logger, log
 from nodetrust.registry.normalize import InvalidPackument, normalize_packument
 from nodetrust.registry.transport import (NetworkDisabled, RateLimiter, ResponseTooLarge, Transport, TransportError,
                                           fetch_with_retry)
-from nodetrust.risk.diff import diff_version
+from nodetrust.risk.diff import diff_versions
 from nodetrust.risk.scoring import score_and_store
 from nodetrust.storage import Database, utcnow
 
@@ -112,8 +112,8 @@ class Fetcher:
             res = upsert_packument(con, rec)
             baseline_ingest = res.maintainers_before is None  # first time we see this package
             changed = {v for v, _, _ in res.integrity_changes}
-            for version in sorted(set(res.new_versions) | changed):
-                delta = diff_version(con, name, version)
+            todo = sorted(set(res.new_versions) | changed)
+            for version, delta in zip(todo, diff_versions(con, name, todo)):
                 score = score_and_store(con, delta)
                 rep.scored += 1
                 # A first ingest scores history but does not raise signals for it:

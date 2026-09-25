@@ -21,7 +21,7 @@ from nodetrust.intel.osv import import_records, iter_dir
 from nodetrust.pipeline import PipelineConfig, submit_scan
 from nodetrust.policy.config import PolicyConfig, save_policy
 from nodetrust.registry.normalize import normalize_packument
-from nodetrust.risk.diff import diff_version
+from nodetrust.risk.diff import diff_versions
 from nodetrust.risk.scoring import score_and_store
 from nodetrust.incidents import upsert_crawler_signal
 from nodetrust.storage import Database
@@ -33,8 +33,9 @@ def _ingest(db: Database, path: Path, *, signals: bool) -> None:
     rec = normalize_packument(json.loads(path.read_text(encoding="utf-8")))
     with db.transaction() as con:
         res = upsert_packument(con, rec, source="demo-fixture")
-        for v in sorted(set(res.new_versions) | {x for x, _, _ in res.integrity_changes}):
-            score = score_and_store(con, diff_version(con, rec.name, v))
+        todo = sorted(set(res.new_versions) | {x for x, _, _ in res.integrity_changes})
+        for delta in diff_versions(con, rec.name, todo):
+            score = score_and_store(con, delta)
             if signals:
                 upsert_crawler_signal(con, score)
 

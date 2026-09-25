@@ -84,7 +84,7 @@ def cmd_ingest(s: Settings, a) -> int:
     from nodetrust.graph.store import upsert_packument
     from nodetrust.incidents import upsert_crawler_signal
     from nodetrust.registry.normalize import InvalidPackument, normalize_packument
-    from nodetrust.risk.diff import diff_version
+    from nodetrust.risk.diff import diff_versions
     from nodetrust.risk.scoring import score_and_store
 
     db = _db(s)
@@ -97,8 +97,9 @@ def cmd_ingest(s: Settings, a) -> int:
             continue
         with db.transaction() as con:
             res = upsert_packument(con, rec, source=f"file:{p.name}")
-            for v in sorted(set(res.new_versions) | {x for x, _, _ in res.integrity_changes}):
-                score = score_and_store(con, diff_version(con, rec.name, v))
+            todo = sorted(set(res.new_versions) | {x for x, _, _ in res.integrity_changes})
+            for delta in diff_versions(con, rec.name, todo):
+                score = score_and_store(con, delta)
                 if a.signals:
                     upsert_crawler_signal(con, score)
         done += 1
