@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NodeTrust Dashboard</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
@@ -25,11 +26,11 @@
   <div id="error" class="error hidden" role="alert"></div>
 
   <nav id="tabs" class="tabs hidden" role="tablist" aria-label="Views">
-    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
-    <button role="tab" data-tab="graph" aria-selected="false">Graph &amp; impact</button>
-    <button role="tab" data-tab="alerts" aria-selected="false">Alerts &amp; approvals</button>
-    <button role="tab" data-tab="policy" aria-selected="false">Policy</button>
-    <button role="tab" data-tab="audit" aria-selected="false">Audit</button>
+    <button role="tab" id="tab-overview" data-tab="overview" aria-controls="view-overview" aria-selected="true" tabindex="0">Overview</button>
+    <button role="tab" id="tab-graph" data-tab="graph" aria-controls="view-graph" aria-selected="false" tabindex="-1">Graph &amp; impact</button>
+    <button role="tab" id="tab-alerts" data-tab="alerts" aria-controls="view-alerts" aria-selected="false" tabindex="-1">Alerts &amp; approvals</button>
+    <button role="tab" id="tab-policy" data-tab="policy" aria-controls="view-policy" aria-selected="false" tabindex="-1">Policy</button>
+    <button role="tab" id="tab-audit" data-tab="audit" aria-controls="view-audit" aria-selected="false" tabindex="-1">Audit</button>
   </nav>
 
   <main>
@@ -41,7 +42,7 @@
         Packages that are not in the graph are unknown, not safe.</p>
     </section>
 
-    <section id="view-overview" class="view hidden" role="tabpanel">
+    <section id="view-overview" class="view hidden" role="tabpanel" aria-labelledby="tab-overview">
       <div class="row">
         <div class="panel grow">
           <h2>Scans</h2>
@@ -57,13 +58,13 @@
       </div>
     </section>
 
-    <section id="view-graph" class="view hidden" role="tabpanel">
+    <section id="view-graph" class="view hidden" role="tabpanel" aria-labelledby="tab-graph">
       <div class="row">
         <div class="panel grow graph-panel">
           <h2>Project dependency graph</h2>
           <p class="muted">Select a package (click, or Tab then Enter) to see its impact paths. <button id="toggle-list" type="button">Show as list</button></p>
           <div id="graph-note" class="muted"></div>
-          <div id="graph" class="graph" aria-label="Dependency graph"></div>
+          <div id="graph" class="graph" role="group" aria-label="Dependency graph"></div>
           <div id="graph-list" class="hidden"></div>
         </div>
         <aside class="panel side" aria-live="polite">
@@ -73,12 +74,12 @@
       </div>
     </section>
 
-    <section id="view-alerts" class="view hidden" role="tabpanel">
+    <section id="view-alerts" class="view hidden" role="tabpanel" aria-labelledby="tab-alerts">
       <div class="panel"><h2>Approvals</h2><div id="approvals"></div></div>
       <div class="panel"><h2>Alerts</h2><div id="alerts"></div></div>
     </section>
 
-    <section id="view-policy" class="view hidden" role="tabpanel">
+    <section id="view-policy" class="view hidden" role="tabpanel" aria-labelledby="tab-policy">
       <div class="panel"><h2>Current policy</h2><div id="policy"></div></div>
       <div class="panel"><h2>How decisions are made</h2>
         <ul class="matrix">
@@ -92,7 +93,7 @@
       </div>
     </section>
 
-    <section id="view-audit" class="view hidden" role="tabpanel">
+    <section id="view-audit" class="view hidden" role="tabpanel" aria-labelledby="tab-audit">
       <div class="panel"><h2>Audit log</h2><div id="audit"></div></div>
     </section>
   </main>

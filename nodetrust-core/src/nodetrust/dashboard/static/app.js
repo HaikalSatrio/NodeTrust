@@ -109,10 +109,25 @@ async function connect(pid, key) {
 
 // ---------------------------------------------------------------- tabs
 function selectTab(name) {
-  document.querySelectorAll("#tabs [role=tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  document.querySelectorAll("#tabs [role=tab]").forEach((b) => {
+    b.setAttribute("aria-selected", String(b.dataset.tab === name));
+    b.tabIndex = b.dataset.tab === name ? 0 : -1; // roving tabindex: Tab enters the tablist once
+  });
   document.querySelectorAll(".view").forEach((v) => v.classList.toggle("hidden", v.id !== `view-${name}`));
   const loaders = { graph: loadGraph, alerts: loadAlerts, policy: loadPolicy, audit: loadAudit };
   if (loaders[name]) loaders[name]().catch((e) => showError(e.message));
+}
+
+// WAI-ARIA tabs: arrow keys, Home and End move between tabs and select them.
+function onTabKey(ev) {
+  const tabs = [...document.querySelectorAll("#tabs [role=tab]")];
+  const i = tabs.indexOf(ev.target);
+  const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[ev.key];
+  if (i < 0 || next === undefined) return;
+  ev.preventDefault();
+  const t = tabs[(next + tabs.length) % tabs.length];
+  selectTab(t.dataset.tab);
+  t.focus();
 }
 
 // ---------------------------------------------------------------- overview
@@ -132,7 +147,7 @@ async function loadScans() {
 function renderScans() {
   const rows = state.scans.map((s) => {
     const tr = el("tr", { class: `selectable${s.id === state.scanId ? " selected" : ""}`, tabindex: "0",
-      "aria-selected": String(s.id === state.scanId) },
+      "aria-current": String(s.id === state.scanId) },
       el("td", {}, s.received_at), el("td", { class: "path" }, s.commit_sha.slice(0, 12)), el("td", {}, s.branch),
       el("td", {}, String(s.component_count)), el("td", {}, s.quality),
       el("td", {}, s.decision ? decisionBadge(s.decision) : "-"));
@@ -424,9 +439,15 @@ async function loadAudit() {
 
 // ---------------------------------------------------------------- boot
 document.addEventListener("DOMContentLoaded", () => {
-  $("#login").addEventListener("submit", (ev) => { ev.preventDefault(); connect($("#pid").value, $("#key").value); $("#key").value = ""; });
-  $("#logout").addEventListener("click", forget);
+  $("#login").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    // The form hides on success; put focus on the selected tab instead of losing it to <body>.
+    connect($("#pid").value, $("#key").value).then(() => { if (state.pid) $("#tabs [aria-selected=true]").focus(); });
+    $("#key").value = "";
+  });
+  $("#logout").addEventListener("click", () => { forget(); $("#pid").focus(); });
   document.querySelectorAll("#tabs [role=tab]").forEach((b) => b.addEventListener("click", () => selectTab(b.dataset.tab)));
+  $("#tabs").addEventListener("keydown", onTabKey);
   $("#toggle-list").addEventListener("click", () => {
     state.listMode = !state.listMode;
     $("#graph").classList.toggle("hidden", state.listMode);
