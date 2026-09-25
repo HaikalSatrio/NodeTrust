@@ -1,0 +1,27 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # TODO(NT-040/NT-044): pin to full commit SHAs (not looked up offline).
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - name: Quality gate (compile, tests, secret scan, action hygiene)
+        run: python scripts/check.py
+      - name: SBOM from the fixture repo (no network, no server)
+        working-directory: examples/fixture-repo
+        run: python ../../src/nodetrust_ci/cli.py sbom --out "$RUNNER_TEMP/sbom.json"

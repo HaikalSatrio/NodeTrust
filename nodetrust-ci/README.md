@@ -1,0 +1,88 @@
+# nodetrust-ci
+
+A GitHub Action that builds an SBOM for an npm project, sends it to a NodeTrust server, and turns the
+project's policy verdict into a CI result: annotations, a step summary and an exit code.
+
+> **Status: MVP, not released.** Tested locally (unit tests, plus end-to-end against a local nodetrust-core over
+> loopback). It has **not yet run on a real GitHub runner**, and the Syft path has not been exercised.
+
+## Usage
+
+```yaml
+permissions:
+  contents: read
+jobs:
+  nodetrust:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@<sha>        # pin to a full commit SHA
+        with: { persist-credentials: false }
+      - uses: your-org/nodetrust-ci@<sha>   # pin to a full commit SHA
+        with:
+          api-url: ${{ vars.NODETRUST_API_URL }}
+          project-id: ${{ vars.NODETRUST_PROJECT_ID }}
+          api-key: ${{ secrets.NODETRUST_API_KEY }}
+          mode: monitor
+```
+
+A complete example is in [examples/workflow.yml](examples/workflow.yml).
+
+### Inputs
+
+| Input | Default | Notes |
+|---|---|---|
+| `api-url` | – | `https://…` (plain http only for localhost) |
+| `project-id` | – | |
+| `api-key` | – | project key with role `ci`, from a secret. Masked in logs. |
+| `mode` | `monitor` | used only when the server cannot be reached; otherwise the project's policy decides |
+| `working-directory` | `.` | where `package-lock.json` lives |
+| `sbom-generator` | `lockfile` | `lockfile` (no downloads) or `syft` |
+| `syft-version`, `syft-sha256` | – | required with `syft`: exact version and the tarball's sha256 from the official release |
+| `include-dev` | `true` | dev-only packages are included by default (their install scripts run in CI) |
+| `timeout-seconds` | `60` | total budget for the API call, retries included |
+
+Outputs: `decision`, `exit-code`, `verdict-path`.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| 0 | `pass` or `warn`. Monitor mode also ends here when the server is unreachable (UNKNOWN warning). |
+| 1 | `gate` or `pending_approval`: a project admin must decide in NodeTrust |
+| 2 | configuration error in **both** modes: missing or invalid key, wrong project, invalid SBOM or lockfile |
+| 3 | enforce mode and no assessment was possible: timeout, server down, stale or incomplete data |
+
+## What is sent
+
+Only commit SHA, branch, run id, and a minimised CycloneDX SBOM: component name, version, purl,
+scope and dependency relations. No source code, file paths, hashes or licences.
+See [nodetrust-core docs/data-sent.md](../nodetrust-core/docs/data-sent.md).
+
+## Why the default does not download Syft
+
+NodeTrust is a supply-chain security tool, so it should not pull an unpinned third-party binary into your
+build. The default builds the SBOM from `package-lock.json` (v2/v3) with the standard library. With
+`sbom-generator: syft`, the action downloads the exact Syft release you name and **verifies its sha256
+before running it**. If Syft's SBOM lacks dependency relations, they are filled in from the lockfile.
+
+## Untrusted pull requests
+
+Pull requests from forks do not receive repository secrets. Skip the job for them (see the `if:` above)
+instead of weakening it. Never use `pull_request_target` together with a checkout of the PR's code. A
+missing key is a configuration error (exit 2), per policy D06.
+
+## Local use
+
+```bash
+cd your-project
+python /path/to/nodetrust-ci/src/nodetrust_ci/cli.py sbom --out sbom.json           # just build the SBOM
+NODETRUST_API_KEY=... python /path/to/cli.py submit --api-url https://nt.example --project prj_... \
+    --commit $(git rev-parse HEAD) --branch main
+```
+
+## Development
+
+```bash
+python scripts/check.py     # compile, tests, secret scan, action.yml hygiene (no ${{ }} in run:, pinned uses:)
+```

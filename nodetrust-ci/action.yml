@@ -1,0 +1,112 @@
+name: NodeTrust CI
+description: Build an SBOM for an npm project, submit it to a NodeTrust server and apply the project's policy verdict.
+author: NodeTrust (Haikal & Brian)
+
+inputs:
+  api-url:
+    description: NodeTrust server URL (https).
+    required: true
+  project-id:
+    description: NodeTrust project id.
+    required: true
+  api-key:
+    description: Project API key with role "ci". Pass it from a repository secret, never inline.
+    required: true
+  mode:
+    description: "monitor (never blocks) or enforce. Only used when the server cannot be reached; otherwise the project's policy decides."
+    required: false
+    default: monitor
+  working-directory:
+    description: Directory containing package-lock.json.
+    required: false
+    default: "."
+  sbom-generator:
+    description: "lockfile (default: no downloads) or syft (downloads a pinned Syft release and verifies its sha256)."
+    required: false
+    default: lockfile
+  syft-version:
+    description: "Syft version without 'v', e.g. 1.14.0. Required when sbom-generator is syft."
+    required: false
+    default: ""
+  syft-sha256:
+    description: "sha256 of syft_<version>_linux_amd64.tar.gz from the official release checksums. Required with syft."
+    required: false
+    default: ""
+  include-dev:
+    description: Include dev-only packages (their install scripts run in CI too).
+    required: false
+    default: "true"
+  timeout-seconds:
+    description: Total time budget for the API call including retries.
+    required: false
+    default: "60"
+
+outputs:
+  decision:
+    description: "pass | warn | gate | pending_approval | unavailable | error"
+    value: ${{ steps.submit.outputs.decision }}
+  exit-code:
+    description: "0 pass/warn, 1 gate or held, 2 configuration error, 3 assessment unavailable (enforce)"
+    value: ${{ steps.submit.outputs.exit-code }}
+  verdict-path:
+    description: Path of the verdict JSON written by this step.
+    value: ${{ steps.submit.outputs.verdict-path }}
+
+runs:
+  using: composite
+  steps:
+    # All inputs are passed through env vars, never interpolated into scripts (script injection).
+    - name: Install pinned Syft (verified)
+      if: inputs.sbom-generator == 'syft'
+      shell: bash
+      env:
+        SYFT_VERSION: ${{ inputs.syft-version }}
+        SYFT_SHA256: ${{ inputs.syft-sha256 }}
+        DEST: ${{ runner.temp }}/nodetrust-syft
+      run: |
+        set -euo pipefail
+        if [[ ! "$SYFT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ ! "$SYFT_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+          echo "::error title=NodeTrust::syft-version (x.y.z) and syft-sha256 are required when sbom-generator is syft"
+          exit 2
+        fi
+        mkdir -p "$DEST"
+        tarball="syft_${SYFT_VERSION}_linux_amd64.tar.gz"
+        curl -fsSL --proto '=https' --tlsv1.2 -o "$DEST/$tarball" \
+          "https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/${tarball}"
+        echo "${SYFT_SHA256}  $DEST/$tarball" | sha256sum -c -
+        tar -xzf "$DEST/$tarball" -C "$DEST" syft
+        "$DEST/syft" version
+
+    - name: Generate SBOM with Syft
+      if: inputs.sbom-generator == 'syft'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        OUT: ${{ runner.temp }}/nodetrust-syft.cdx.json
+        SYFT: ${{ runner.temp }}/nodetrust-syft/syft
+      run: |
+        set -euo pipefail
+        "$SYFT" scan dir:. -q -o "cyclonedx-json=$OUT"
+
+    - name: Submit to NodeTrust
+      id: submit
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        NODETRUST_API_URL: ${{ inputs.api-url }}
+        NODETRUST_PROJECT_ID: ${{ inputs.project-id }}
+        NODETRUST_API_KEY: ${{ inputs.api-key }}
+        NODETRUST_MODE: ${{ inputs.mode }}
+        NODETRUST_TIMEOUT: ${{ inputs.timeout-seconds }}
+        NODETRUST_VERDICT_PATH: ${{ runner.temp }}/nodetrust-verdict.json
+        NT_GENERATOR: ${{ inputs.sbom-generator }}
+        NT_SYFT_OUT: ${{ runner.temp }}/nodetrust-syft.cdx.json
+        NT_INCLUDE_DEV: ${{ inputs.include-dev }}
+        NT_ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -uo pipefail
+        args=(submit --lockfile package-lock.json)
+        if [[ "$NT_GENERATOR" == "syft" ]]; then args+=(--sbom "$NT_SYFT_OUT"); fi
+        if [[ "$NT_INCLUDE_DEV" != "true" ]]; then args+=(--no-dev); fi
+        echo "verdict-path=$NODETRUST_VERDICT_PATH" >> "$GITHUB_OUTPUT"
+        python3 "$NT_ACTION_PATH/src/nodetrust_ci/cli.py" "${args[@]}"
