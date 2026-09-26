@@ -39,8 +39,8 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 |---|---|---|---|---|
 | NT-040 | Review | Workflow kontributor (`CONTRIBUTING.md`), quality gate | `docs/audit/NT-040-audit.md`, `scripts/check.py` | Jam kalibrasi (manusia) |
 | NT-002 | In Progress | Setup dari clone bersih di mesinmu, lalu `docker compose up --build` dan `--profile neo4j` | Clean clone + venv baru + install OK; `compose config` valid; lint pyflakes; Neo4j di Compose + `check_neo4j.py`; token `change-me` ditolak | **Build image Docker + Neo4j** (butuh jaringan); pemakaian Neo4j/GDS diputuskan di NT-013 |
-| NT-006 | Review | Checkpoint, replay setelah crash | `tests/test_ingest.py` | **Endpoint change-feed npm asli** (butuh jaringan) |
-| NT-007 | Review | Normalisasi packument | + 1.024 packument npm **asli** dari cache lokal: 0 crash (`docs/audit/real-data-check.md`) | Fetch langsung dari registry (jaringan) |
+| NT-006 | Review | Checkpoint, replay setelah crash, start pertama dari head | `tests/test_ingest.py`; uji live ke npm (`docs/audit/live-checks.md`): bug `since=now` → 400 ditemukan dan diperbaiki | – |
+| NT-007 | Review | Normalisasi packument | 1.024 packument asli dari cache lokal: 0 crash; uji live 14 packument dari registry npm: 0 gagal | – |
 | NT-009 | Review | Diff antarversi, kasus integrity | Perbaikan performa: `react` 595 s → 1,1 s, delta identik pada 6.448 versi asli | – |
 | NT-010 | Review | **Bobot `rules-v1`** | Distribusi tier pada 291.040 versi asli | Keputusan bobot, lihat observasi di `real-data-check.md` |
 | NT-011 | Review | Range, alias, withdrawn, `MAL-*` | `tests/test_osv.py` | Import `all.zip` / OSV API asli (jaringan) |
@@ -85,7 +85,6 @@ Tidak disentuh: NT-014/016 (riset butuh sumber asli), NT-028/041/043/044, NT-031
 Semuanya butuh akses jaringan dan belum dijalankan. Sebaiknya dikerjakan saat review, dengan persetujuan
 kalian berdua:
 
-- Verifikasi endpoint change-feed dan packument npm (NT-006/007).
 - Import OSV asli (NT-011).
 - Kirim email ke relay asli (NT-023).
 - `docker compose up --build` (NT-002).

@@ -31,8 +31,9 @@ Create a `ci` key for the repository with the admin key
 
 ## Going online (server only)
 
-Set `NODETRUST_ALLOW_NETWORK=true` and add packages to the watchlist (`POST /v1/watchlist`). Before relying
-on the feed, verify the npm change-feed endpoint and response format (open item in NT-006). For e-mail, set
+Set `NODETRUST_ALLOW_NETWORK=true` and add packages to the watchlist (`POST /v1/watchlist`). The npm change
+feed and packument fetch were checked live (`docs/audit/live-checks.md`); a first start begins at the feed's
+current head, so history is not replayed unless you ask for it. For e-mail, set
 `NODETRUST_SMTP_*`. Without SMTP, alerts go to the outbox directory as `.eml` files.
 
 ## Docker / Compose

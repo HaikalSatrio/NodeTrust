@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     allow_network: bool = False
     npm_registry_url: str = "https://registry.npmjs.org"
-    # Endpoint must be verified against npm's current docs before live use (NT-006).
+    # Checked live on 26 Sep 2026 (engine npm-replicate); see docs/audit/live-checks.md.
     npm_changes_url: str = "https://replicate.npmjs.com/registry/_changes"
     osv_api_url: str = "https://api.osv.dev/v1"
     http_timeout_s: float = 20.0

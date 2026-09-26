@@ -4,10 +4,11 @@ Protocol (CouchDB-style `_changes`, as exposed by npm's replicate service):
     GET <changes_url>?since=<seq>&limit=<n>
     -> {"results": [{"seq": .., "id": "<package>", "deleted": bool?}, ...], "last_seq": ..}
 
-The exact endpoint and response shape must be verified against npm's current
-documentation before live use; that check needs network access and is still open
-(see docs/audit/NT-040-audit.md). The parser accepts integer or string sequence
-ids and tolerates missing `last_seq`.
+Checked live on 26 Sep 2026 against https://replicate.npmjs.com/registry/_changes
+(engine "npm-replicate"): integer `seq`/`last_seq`, optional `deleted`, no `pending`, pages of up to
+10,000 rows. CouchDB's `since=now` is rejected with 400, so a first start without a checkpoint
+begins at `update_seq` from the info document (`<changes_url minus _changes>`). The parser accepts
+integer or string sequence ids and tolerates missing `last_seq`.
 
 Delivery guarantee: for each page, fetch jobs for the changed packages and the
 new checkpoint are written in ONE transaction. A crash before commit replays the
@@ -101,24 +102,48 @@ def parse_changes_page(body: bytes) -> tuple[list[dict], str | None, int | None]
     return out, (str(last) if last is not None else None), pending
 
 
+def default_info_url(changes_url: str) -> str:
+    """https://replicate.npmjs.com/registry/_changes -> https://replicate.npmjs.com/registry/"""
+    base = changes_url.split("?", 1)[0]
+    return base[: -len("_changes")] if base.endswith("/_changes") else base.rstrip("/") + "/"
+
+
 class ChangesFeed:
     def __init__(self, db: Database, transport: Transport, changes_url: str, *, feed: str = "npm",
                  page_limit: int = 500, watch_all: bool = False, timeout: float = 30.0,
-                 start_seq: str = "now", sleep: Callable[[float], None] = time.sleep):
+                 start_seq: str | None = None, info_url: str | None = None,
+                 sleep: Callable[[float], None] = time.sleep):
+        # start_seq None: begin at the feed's current head. "0" replays the whole history.
         self.db, self.transport, self.url = db, transport, changes_url
         self.feed, self.page_limit, self.watch_all = feed, page_limit, watch_all
         self.timeout, self.start_seq, self.sleep = timeout, start_seq, sleep
+        self.info_url = info_url or default_info_url(changes_url)
+
+    def _head_seq(self) -> str:
+        resp = fetch_with_retry(self.transport, "GET", self.info_url, timeout=self.timeout, max_bytes=1024 * 1024,
+                                sleep=self.sleep)
+        if resp.status != 200:
+            raise TransportError(f"HTTP {resp.status} from changes feed info")
+        try:
+            seq = json.loads(resp.body)["update_seq"]
+        except (ValueError, UnicodeDecodeError, KeyError, TypeError) as e:
+            raise FeedFormatError(f"changes feed info has no update_seq: {e}") from e
+        if isinstance(seq, bool) or not isinstance(seq, (int, str)) or str(seq) == "":
+            raise FeedFormatError("changes feed info update_seq is not a sequence id")
+        return str(seq)
 
     def _watched(self, con) -> set[str]:
         return {r["name"] for r in con.execute("SELECT name FROM watchlist WHERE ecosystem=?", (ECOSYSTEM_NPM,))}
 
     def poll_once(self) -> PollResult:
         since = get_checkpoint(self.db, self.feed) or self.start_seq
-        url = f"{self.url}?{urlencode({'since': since, 'limit': self.page_limit})}"
         try:
+            if since is None:
+                since = self._head_seq()
+            url = f"{self.url}?{urlencode({'since': since, 'limit': self.page_limit})}"
             resp = fetch_with_retry(self.transport, "GET", url, timeout=self.timeout, max_bytes=50 * 1024 * 1024,
                                     sleep=self.sleep)
-        except (TransportError, NetworkDisabled) as e:
+        except (TransportError, NetworkDisabled, FeedFormatError) as e:
             self.db.set_sync(f"feed:{self.feed}", ok=False, error=str(e))
             log(_log, logging.WARNING, "feed.poll_failed", feed=self.feed, since=since, error=str(e))
             raise

@@ -9,7 +9,7 @@ from conftest import as_body, packument
 from nodetrust.contracts import PackageId, RiskTier, tier_for_score
 from nodetrust.graph.store import dependents_of, dependencies_of, upsert_packument, versions_of
 from nodetrust.incidents import list_incidents
-from nodetrust.registry.feed import ChangesFeed, FeedFormatError, get_checkpoint
+from nodetrust.registry.feed import ChangesFeed, FeedFormatError, default_info_url, get_checkpoint
 from nodetrust.registry.fetch import Fetcher, packument_url
 from nodetrust.registry.normalize import InvalidPackument, normalize_packument
 from nodetrust.registry.transport import (DisabledTransport, FakeTransport, NetworkDisabled, RateLimiter, Response,
@@ -26,6 +26,14 @@ def changes(rows, last):
     return Response(200, json.dumps({"results": rows, "last_seq": last}).encode())
 
 
+INFO = "https://replicate.test/"  # derived from FEED: the info document with the current head
+
+
+def head(t, seq=100):
+    t.add(INFO, Response(200, json.dumps({"db_name": "registry", "engine": "npm-replicate", "update_seq": seq}).encode()))
+    return t
+
+
 def watch(db, *names):
     with db.transaction() as con:
         for n in names:
@@ -36,8 +44,8 @@ def watch(db, *names):
 
 def test_feed_enqueues_watched_changes_and_advances_checkpoint(db):
     watch(db, "a", "@s/b")
-    t = FakeTransport()
-    t.add(f"{FEED}?since=now&limit=500", changes([{"seq": 1, "id": "a"}, {"seq": 2, "id": "zzz"},
+    t = head(FakeTransport())
+    t.add(f"{FEED}?since=100&limit=500", changes([{"seq": 1, "id": "a"}, {"seq": 2, "id": "zzz"},
                                                    {"seq": 3, "id": "@s/b", "deleted": True}], 3))
     res = ChangesFeed(db, t, FEED, sleep=nosleep).poll_once()
     assert (res.changes, res.enqueued, res.skipped_unwatched) == (3, 2, 1)
@@ -49,21 +57,21 @@ def test_feed_enqueues_watched_changes_and_advances_checkpoint(db):
 
 def test_feed_resumes_from_checkpoint_after_restart(db):
     watch(db, "a")
-    t = FakeTransport()
-    t.add(f"{FEED}?since=now&limit=500", changes([{"seq": 10, "id": "a"}], 10))
+    t = head(FakeTransport())
+    t.add(f"{FEED}?since=100&limit=500", changes([{"seq": 10, "id": "a"}], 10))
     t.add(f"{FEED}?since=10&limit=500", changes([{"seq": 11, "id": "a"}], 11))
     ChangesFeed(db, t, FEED, sleep=nosleep).poll_once()
     # "restart": brand-new listener object, same database
     ChangesFeed(db, t, FEED, sleep=nosleep).poll_once()
-    assert [u for _, u in t.calls] == [f"{FEED}?since=now&limit=500", f"{FEED}?since=10&limit=500"]
+    assert [u for _, u in t.calls] == [INFO, f"{FEED}?since=100&limit=500", f"{FEED}?since=10&limit=500"]
     assert get_checkpoint(db, "npm") == "11"
 
 
 def test_crash_before_commit_replays_page_without_losing_or_duplicating(db, monkeypatch):
     watch(db, "a", "b")
-    t = FakeTransport()
+    t = head(FakeTransport())
     page = changes([{"seq": 5, "id": "a"}, {"seq": 6, "id": "b"}], 6)
-    t.add(f"{FEED}?since=now&limit=500", page)
+    t.add(f"{FEED}?since=100&limit=500", page)
     feed = ChangesFeed(db, t, FEED, sleep=nosleep)
 
     import nodetrust.registry.feed as feedmod
@@ -94,8 +102,8 @@ def test_crash_before_commit_replays_page_without_losing_or_duplicating(db, monk
 
 
 def test_feed_transport_failure_keeps_checkpoint_and_records_error(db):
-    t = FakeTransport()
-    t.add(f"{FEED}?since=now&limit=500", Response(200, b'{"results":[],"last_seq":"7"}'))
+    t = head(FakeTransport())
+    t.add(f"{FEED}?since=100&limit=500", Response(200, b'{"results":[],"last_seq":"7"}'))
     t.add(f"{FEED}?since=7&limit=500", TransportError("reset"))
     feed = ChangesFeed(db, t, FEED, sleep=nosleep)
     feed.poll_once()
@@ -108,10 +116,39 @@ def test_feed_transport_failure_keeps_checkpoint_and_records_error(db):
 
 
 def test_feed_rejects_malformed_page(db):
-    t = FakeTransport({f"{FEED}?since=now&limit=500": [Response(200, b'{"nope": 1}')]})
+    t = head(FakeTransport({f"{FEED}?since=100&limit=500": [Response(200, b'{"nope": 1}')]}))
     with pytest.raises(FeedFormatError):
         ChangesFeed(db, t, FEED, sleep=nosleep).poll_once()
     assert get_checkpoint(db, "npm") is None
+
+
+def test_first_start_begins_at_feed_head_never_since_now(db):
+    # npm-replicate answers CouchDB's since=now with 400 (checked live on 26 Sep 2026)
+    t = head(FakeTransport(), seq=132801440)
+    t.add(f"{FEED}?since=now&limit=500", Response(400, b'"Bad Request"'))
+    t.add(f"{FEED}?since=132801440&limit=500", changes([], 132801440))
+    ChangesFeed(db, t, FEED, sleep=nosleep).poll_once()
+    assert [u for _, u in t.calls] == [INFO, f"{FEED}?since=132801440&limit=500"]
+    assert get_checkpoint(db, "npm") == "132801440"
+
+
+def test_explicit_start_seq_replays_without_asking_for_the_head(db):
+    t = FakeTransport()
+    t.add(f"{FEED}?since=0&limit=500", changes([], 0))
+    ChangesFeed(db, t, FEED, start_seq="0", sleep=nosleep).poll_once()
+    assert [u for _, u in t.calls] == [f"{FEED}?since=0&limit=500"]
+
+
+@pytest.mark.parametrize("body", [b'{"db_name": "registry"}', b"not json", b'{"update_seq": true}'])
+def test_feed_info_without_update_seq_is_a_format_error(db, body):
+    t = FakeTransport({INFO: [Response(200, body)]})
+    with pytest.raises(FeedFormatError):
+        ChangesFeed(db, t, FEED, sleep=nosleep).poll_once()
+    assert get_checkpoint(db, "npm") is None
+
+
+def test_info_url_for_the_real_npm_feed():
+    assert default_info_url("https://replicate.npmjs.com/registry/_changes") == "https://replicate.npmjs.com/registry/"
 
 
 def test_network_is_disabled_by_default(db):
