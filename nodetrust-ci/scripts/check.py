@@ -1,4 +1,4 @@
-"""Quality gate for nodetrust-ci (NT-040): compile, test, secret scan, action hygiene.
+"""Quality gate for nodetrust-ci (NT-040): compile, lint, test, secret scan, action hygiene.
 
     python scripts/check.py
 """
@@ -38,8 +38,29 @@ def action_hygiene() -> list[str]:
     return problems
 
 
+def lint() -> bool | None:
+    """pyflakes: unused imports, undefined names and similar. None when pyflakes is not installed."""
+    import importlib.util
+    import os
+
+    if importlib.util.find_spec("pyflakes") is None:
+        if os.environ.get("NODETRUST_REQUIRE_LINT") == "1":
+            print("      pyflakes is required here (NODETRUST_REQUIRE_LINT=1) but not installed")
+            return False
+        return None
+    dirs = [d for d in ("src", "tests", "e2e", "scripts") if (ROOT / d).is_dir()]
+    return subprocess.call([sys.executable, "-m", "pyflakes", *dirs], cwd=ROOT) == 0
+
+
+def report_lint(res: bool | None) -> bool:
+    if res is None:
+        print("      skipped: pyflakes is not installed (pip install pyflakes); CI always runs it")
+    return res is not False
+
+
 def main() -> int:
     ok = compileall.compile_dir(str(ROOT / "src"), quiet=1) and compileall.compile_dir(str(ROOT / "tests"), quiet=1)
+    ok &= report_lint(lint())
     ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "no:asyncio"],
                           cwd=ROOT) == 0
     hits = []
