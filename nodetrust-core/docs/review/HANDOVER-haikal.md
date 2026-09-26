@@ -38,7 +38,7 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 | Kode | Usulan status | Cek saat review | Bukti | Masih terbuka |
 |---|---|---|---|---|
 | NT-040 | Review | Workflow kontributor (`CONTRIBUTING.md`), quality gate | `docs/audit/NT-040-audit.md`, `scripts/check.py` | Jam kalibrasi (manusia) |
-| NT-002 | In Progress | Setup dari clone bersih di mesinmu | Uji clean clone + venv baru + `pip install .`, `docker compose config` valid | **Build image Docker** (butuh jaringan), keputusan Neo4j (NT-013) |
+| NT-002 | In Progress | Setup dari clone bersih di mesinmu, lalu `docker compose up --build` dan `--profile neo4j` | Clean clone + venv baru + install OK; `compose config` valid; lint pyflakes; Neo4j di Compose + `check_neo4j.py`; token `change-me` ditolak | **Build image Docker + Neo4j** (butuh jaringan); pemakaian Neo4j/GDS diputuskan di NT-013 |
 | NT-006 | Review | Checkpoint, replay setelah crash | `tests/test_ingest.py` | **Endpoint change-feed npm asli** (butuh jaringan) |
 | NT-007 | Review | Normalisasi packument | + 1.024 packument npm **asli** dari cache lokal: 0 crash (`docs/audit/real-data-check.md`) | Fetch langsung dari registry (jaringan) |
 | NT-009 | Review | Diff antarversi, kasus integrity | Perbaikan performa: `react` 595 s → 1,1 s, delta identik pada 6.448 versi asli | – |

@@ -80,4 +80,7 @@ Work done so the handover to Haikal is complete. Each change is a separate commi
 | Keyboard-only walkthrough of the dashboard (headless Edge, demo data) | Focus lost after login/logout. Tabs had no arrow keys or `aria-controls`. Graph label ignored (no role). `aria-selected` on plain rows. Favicon 404. | Fixed. All controls were already reachable and had a focus ring. | commit `fix(NT-026)`. A screen-reader pass by a human is still needed. |
 | `docker compose config` | valid | – | – |
 
+| Operator token (NT-002, later pass) | `.env.example` shipped `NODETRUST_ADMIN_TOKEN=change-me` and the server accepted it: an instance-wide token anyone could guess. Config errors also echoed the rejected value. | Tokens under 32 characters or placeholder-like are refused at start-up. Empty disables operator endpoints. Errors hide input values. | `tests/test_config.py` |
+| Lint (NT-002, later pass) | No linter in the gate. pyflakes found 3 unused imports. | pyflakes in `check.py` (skipped with a message when missing, required in CI) | `check.py` output |
+
 Line endings are pinned to LF (`.gitattributes`) so Windows and Linux checkouts produce identical files.
