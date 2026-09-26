@@ -1,8 +1,9 @@
 # Self-host (MVP): one API process + one worker on a shared SQLite volume (D02).
-# NOT yet verified: Docker was not running on the development machine and images
-# cannot be pulled offline. First run must be checked by a human (see docs/audit/NT-040-audit.md).
+# Partly verified: `docker compose config` passes (with and without the neo4j profile) and all ports
+# bind to 127.0.0.1. The images have not been built yet, because pulling them needs network access.
+# The first real run must be checked by a human (see docs/setup.md).
 #
-#   cp .env.example .env   # then set NODETRUST_ADMIN_TOKEN
+#   cp .env.example .env   # NODETRUST_ADMIN_TOKEN: 32+ random characters, or empty to disable
 #   docker compose up --build
 #
 # The API binds to 127.0.0.1 only; put a TLS reverse proxy in front for remote CI access.
@@ -43,15 +44,32 @@ services:
       api:
         condition: service_healthy
 
-  # Neo4j is the planned graph store (D02) but its adoption, version and GDS
-  # licensing are decided in NT-002/NT-013 (Haikal). Uncomment once agreed.
-  # neo4j:
-  #   image: neo4j:<pinned-version>
-  #   environment:
-  #     NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
-  #   ports: ["127.0.0.1:7474:7474", "127.0.0.1:7687:7687"]
-  #   volumes: [neo4j-data:/data]
+  # Neo4j (D02). The MVP graph still runs on the SQLite + networkx stand-in, so Neo4j is optional and
+  # only starts with its profile. GDS and its licence are decided in NT-013 (Haikal).
+  #   docker compose --profile neo4j up -d neo4j
+  #   python scripts/check_neo4j.py
+  # Community edition, bound to 127.0.0.1. NEO4J_PASSWORD (8+ characters) comes from .env.
+  # Pin the image by digest before any release (NT-044).
+  neo4j:
+    image: neo4j:5.26-community
+    profiles: ["neo4j"]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-}
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j-data:/data
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p \"$${NEO4J_AUTH#neo4j/}\" 'RETURN 1' >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
 
 volumes:
   nodetrust-data:
-  # neo4j-data:
+  neo4j-data:
