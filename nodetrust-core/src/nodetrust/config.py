@@ -9,12 +9,14 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="NODETRUST_", env_file=None, extra="ignore")
+    # hide_input_in_errors: a rejected value (a token, a password) must never be echoed into logs.
+    model_config = SettingsConfigDict(env_prefix="NODETRUST_", env_file=None, extra="ignore",
+                                      hide_input_in_errors=True)
 
     db_path: Path = Path("data/nodetrust.db")
     # Operator token for instance-level actions (create project, manage incidents).
@@ -65,6 +67,19 @@ class Settings(BaseSettings):
     retention_days: int = Field(default=90, ge=1)
     traversal_max_nodes: int = 5_000
     traversal_max_depth: int = 25
+
+    @field_validator("admin_token")
+    @classmethod
+    def _admin_token_is_strong(cls, v: SecretStr | None) -> SecretStr | None:
+        # The operator token is instance-wide: it can verify incidents, which gates builds in
+        # enforce mode. A placeholder copied from .env.example must never become that credential.
+        if v is None or not v.get_secret_value().strip():
+            return None  # empty = operator endpoints disabled
+        raw = v.get_secret_value()
+        if len(raw) < 32 or raw.lower().startswith(("change", "example", "placeholder", "secret", "password")):
+            raise ValueError("NODETRUST_ADMIN_TOKEN must be at least 32 random characters "
+                             '(python -c "import secrets; print(secrets.token_urlsafe(32))"), or empty to disable it')
+        return v
 
 
 @lru_cache(maxsize=1)

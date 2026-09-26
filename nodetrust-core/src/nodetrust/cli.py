@@ -241,8 +241,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from pydantic import ValidationError
+
     args = build_parser().parse_args(argv)
-    s = Settings()
+    try:
+        s = Settings()
+    except ValidationError as e:
+        print(f"Invalid configuration: {e}", file=sys.stderr)
+        return 2
     configure_logging(s.log_level)
     return args.fn(s, args)
 
