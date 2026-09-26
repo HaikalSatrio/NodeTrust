@@ -37,20 +37,20 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 
 | Kode | Usulan status | Cek saat review | Bukti | Masih terbuka |
 |---|---|---|---|---|
-| NT-040 | Review | Workflow kontributor (`CONTRIBUTING.md`), quality gate | `docs/audit/NT-040-audit.md`, `scripts/check.py` | Jam kalibrasi (manusia) |
-| NT-002 | In Progress | Setup dari clone bersih di mesinmu, lalu `docker compose up --build` dan `--profile neo4j` | Clean clone + venv baru + install OK; `compose config` valid; lint pyflakes; Neo4j di Compose + `check_neo4j.py`; token `change-me` ditolak | **Build image Docker + Neo4j** (butuh jaringan); pemakaian Neo4j/GDS diputuskan di NT-013 |
+| NT-040 | Review | Workflow kontributor (`CONTRIBUTING.md`), quality gate | `docs/audit/NT-040-audit.md`, `scripts/check.py` (lint + pin SHA action wajib) | Jam kalibrasi (manusia) |
+| NT-002 | Review | Setup dari clone bersih, `docker compose up --build`, `--profile neo4j` | Semua kriteria terverifikasi: clean clone, build + run Docker, Neo4j healthy + `check_neo4j.py` OK, lint, tidak ada secret, image di-pin digest (`docs/audit/live-checks.md`) | Pemakaian Neo4j/GDS diputuskan di NT-013 |
 | NT-006 | Review | Checkpoint, replay setelah crash, start pertama dari head | `tests/test_ingest.py`; uji live ke npm (`docs/audit/live-checks.md`): bug `since=now` → 400 ditemukan dan diperbaiki | – |
 | NT-007 | Review | Normalisasi packument | 1.024 packument asli dari cache lokal: 0 crash; uji live 14 packument dari registry npm: 0 gagal | – |
 | NT-009 | Review | Diff antarversi, kasus integrity | Perbaikan performa: `react` 595 s → 1,1 s, delta identik pada 6.448 versi asli | – |
 | NT-010 | Review | **Bobot `rules-v1`** | Distribusi tier pada 291.040 versi asli | Keputusan bobot, lihat observasi di `real-data-check.md` |
-| NT-011 | Review | Range, alias, withdrawn, `MAL-*` | `tests/test_osv.py` | Import `all.zip` / OSV API asli (jaringan) |
+| NT-011 | Review | Range, alias, withdrawn, `MAL-*`, volume data asli | `tests/test_osv.py`, `tests/test_scale.py`; import `all.zip` asli 229.416 record dalam 75 s, OSV API live, paginasi | Observasi ua-parser-js (GHSA, bukan MAL) untuk review D04 |
 | NT-017 | Review | Isolasi project, role, revoke, throttle | `tests/test_api.py`, `test_hardening.py` | – |
 | NT-018 | Review | Validasi SBOM, batas fetch | `tests/test_sbom.py`, `test_hardening.py` | – |
 | NT-019 | Review | Overlay, choke point, unknown ≠ aman | `exposure/report.py` + tes | Bergantung stand-in NT-012/013 |
 | NT-020 | Review | Identitas commit, tanpa duplikat | `exposure/drift.py` + tes | – |
 | NT-022 | Review | Skenario NT-001 | `tests/test_policy.py` (D05 opsi 1) | Definisi eskalasi lintas ≥2 project |
 | NT-023 | Review | Dedup, retry, triage, **TLS SMTP** | `tests/test_smtp.py` (percakapan SMTP/STARTTLS asli di loopback) | Uji ke penyedia email asli; port 465 belum didukung |
-| NT-024 | In Progress | `action.yml`, exit code | + step Submit dijalankan dengan bash, output `GITHUB_OUTPUT` diuji | **Runner GitHub asli**, jalur Syft (jaringan) |
+| NT-024 | In Progress | `action.yml`, exit code, jalur Syft | Step action dijalankan di `ubuntu:24.04` (lockfile + Syft 1.52.0): 2 bug Syft diperbaiki, checksum salah ditolak, verdict kedua jalur sama; SHA action di-pin | **Run di runner GitHub asli di repo contoh** (perlu push ke GitHub) |
 | NT-025 | Review | Tanpa LKG = tanpa pin; patch hanya draf | `lkg/` + tes | Estimasi ulang (scope berubah karena D01) |
 | NT-026 | Review | Coba dengan keyboard dan screen reader | Walkthrough keyboard otomatis: 0 isu setelah perbaikan | Screen reader dan graph besar (manusia) |
 | NT-029 | In Progress | Docs Inggris | README ×2, `docs/` | Lisensi, paket rilis (NT-028/044) |
@@ -80,16 +80,13 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 
 Tidak disentuh: NT-014/016 (riset butuh sumber asli), NT-028/041/043/044, NT-031..039.
 
-## 6. Yang tidak bisa dikerjakan offline
+## 6. Yang masih terbuka di luar laptop
 
-Semuanya butuh akses jaringan dan belum dijalankan. Sebaiknya dikerjakan saat review, dengan persetujuan
-kalian berdua:
+Verifikasi live yang sudah dijalankan ada di `docs/audit/live-checks.md`. Yang tersisa butuh kredensial
+atau publikasi:
 
-- Import OSV asli (NT-011).
-- Kirim email ke relay asli (NT-023).
-- `docker compose up --build` (NT-002).
-- Jalankan action di runner GitHub asli, lalu pin `uses:` ke SHA lengkap (NT-024/044).
-- Jalur Syft dengan versi dan sha256 resmi (NT-024).
+- Jalankan action di runner GitHub asli pada repo contoh (NT-024), perlu push ke GitHub.
+- Kirim email ke relay asli (NT-023, opsional: acceptance terpenuhi dengan uji SMTP di loopback), perlu kredensial SMTP.
 
 ## 7. Setelah review
 

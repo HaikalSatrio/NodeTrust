@@ -61,3 +61,29 @@ changed because of them. Requests used each tool's own client identity. No proje
   appears in OSV only as a GHSA "vulnerability" (`GHSA-pjwm-rvh2-c87w`), not as `MAL-*`. Under D04 (agreed),
   advisories are information only, so no incident is created for that historical attack. This is not
   changed here; it is a policy question.
+
+## NT-024: GitHub Action, Syft path
+
+- Syft **1.52.0** (latest tag via `git ls-remote`). The sha256 of `syft_1.52.0_linux_amd64.tar.gz` came from the
+  release's `syft_1.52.0_checksums.txt`. Checking the checksum file's signature (cosign) is not done yet.
+- Runner emulation: the steps of `action.yml` were run as a runner would. `if:` was evaluated,
+  `${{ }}` expanded into env, and each script run with `bash --noprofile --norc -eo pipefail` in
+  `ubuntu:24.04` (curl and python3 installed). The container shared the running API's network namespace,
+  so the API was reached over loopback.
+- A wrong sha256 made the install step fail (`sha256sum: FAILED`) and the job stopped before Syft ran.
+- **Bug found:** Syft 1.52 writes CycloneDX **1.7** by default, and the server accepts 1.4 to 1.6, so every
+  Syft scan was rejected with 422. **Fixed**: the action asks for `cyclonedx-json@1.6`.
+- **Bug found:** Syft lists the project's own package (`pkg:npm/demo-exposed@1.0.0`) as a library beside its
+  directory root. It was unreachable from the root, which made every Syft scan "coverage incomplete"
+  (UNKNOWN). **Fixed** in the client's `enrich()`.
+- After both fixes, the Syft path and the lockfile path returned the **same verdict** on the same server for
+  the fixture repository. Outputs (`decision`, `exit-code`, `verdict-path`) were written to
+  `GITHUB_OUTPUT`, and the key was masked first.
+- Still open: a run on a real GitHub-hosted runner in an example repository (the acceptance criterion
+  "menampilkan verdict di repo contoh"). That needs the code pushed to GitHub.
+
+## NT-040: action pins
+
+- `git ls-remote` on 26 Sep 2026: `actions/checkout` v4.4.0 = `11d5960a…`, `actions/setup-python` v5.6.0 =
+  `a26af69b…`. Both are lightweight tags on commits. Both repositories' workflows and the example workflow
+  are pinned, and `check.py` fails on any unpinned `uses:` in `.github/workflows`. Newer majors (v7) exist.
