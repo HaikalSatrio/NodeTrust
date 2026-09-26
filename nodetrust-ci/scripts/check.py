@@ -58,6 +58,19 @@ def report_lint(res: bool | None) -> bool:
     return res is not False
 
 
+def workflows_pinned() -> list[str]:
+    """Every `uses:` in .github/workflows must be pinned to a full commit SHA (tags are mutable)."""
+    import re as _re
+
+    bad = []
+    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        for i, line in enumerate(wf.read_text(encoding="utf-8").splitlines(), 1):
+            m = _re.search(r"uses:\s*([^\s#]+)", line)
+            if m and not m.group(1).startswith("./") and not _re.fullmatch(r"[0-9a-f]{40}", m.group(1).split("@")[-1]):
+                bad.append(f"{wf.relative_to(ROOT)}:{i}: '{m.group(1)}' is not pinned to a full commit SHA")
+    return bad
+
+
 def main() -> int:
     ok = compileall.compile_dir(str(ROOT / "src"), quiet=1) and compileall.compile_dir(str(ROOT / "tests"), quiet=1)
     ok &= report_lint(lint())
@@ -73,7 +86,7 @@ def main() -> int:
             hits += [f"{p.relative_to(ROOT)}: possible secret" for _ in SECRET.finditer(t)]
     for h in hits:
         print("  " + h)
-    probs = action_hygiene()
+    probs = action_hygiene() + workflows_pinned()
     for pr in probs:
         print("  " + pr)
     ok &= not hits and not probs
