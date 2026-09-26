@@ -106,8 +106,9 @@ def main() -> int:
     ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=ROOT) == 0
     if (ROOT.parent / "nodetrust-ci" / "src" / "nodetrust_ci" / "cli.py").is_file():
         print("      e2e (nodetrust-ci found next to this repo)")
-        ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "no:asyncio", "e2e"],
-                              cwd=ROOT) == 0
+        # -p no:asyncio makes pyproject's asyncio option unknown here; that warning is noise, not a problem.
+        ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-p", "no:asyncio",
+                               "-W", "ignore::pytest.PytestConfigWarning", "e2e"], cwd=ROOT) == 0
     else:
         print("      e2e skipped: clone nodetrust-ci next to this repo to run it")
     print("[3/4] secret scan")
