@@ -88,6 +88,9 @@ NODETRUST_API_KEY=... python /path/to/cli.py submit --api-url https://nt.example
 
 ## Development
 
+The client itself needs only the Python standard library (3.11+). The quality gate needs pytest and pyflakes:
+
 ```bash
-python scripts/check.py     # compile, tests, secret scan, action.yml hygiene (no ${{ }} in run:, pinned uses:)
+python -m pip install pytest pyflakes   # or reuse nodetrust-core's venv, which already has both
+python scripts/check.py     # compile, lint, tests, secret scan, action.yml hygiene (no ${{ }} in run:, pinned uses:)
 ```
