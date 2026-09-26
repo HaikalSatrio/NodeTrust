@@ -1,6 +1,5 @@
 """NT-042 backup/restore/retention, NT-026 dashboard serving, demo seed, health."""
 
-import json
 from pathlib import Path
 
 import pytest

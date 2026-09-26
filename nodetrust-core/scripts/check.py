@@ -2,7 +2,7 @@
 
     python scripts/check.py
 
-1. byte-compile every Python file (syntax errors),
+1. byte-compile every Python file (syntax errors) and lint it with pyflakes,
 2. run the test suite (tests block all non-loopback network access), plus the local e2e suite
    when nodetrust-ci is cloned next to this repository,
 3. scan tracked-looking files for committed secrets,
@@ -51,6 +51,26 @@ def secret_scan() -> list[str]:
     return hits
 
 
+def lint() -> bool | None:
+    """pyflakes: unused imports, undefined names and similar. None when pyflakes is not installed."""
+    import importlib.util
+    import os
+
+    if importlib.util.find_spec("pyflakes") is None:
+        if os.environ.get("NODETRUST_REQUIRE_LINT") == "1":
+            print("      pyflakes is required here (NODETRUST_REQUIRE_LINT=1) but not installed")
+            return False
+        return None
+    dirs = [d for d in ("src", "tests", "e2e", "scripts") if (ROOT / d).is_dir()]
+    return subprocess.call([sys.executable, "-m", "pyflakes", *dirs], cwd=ROOT) == 0
+
+
+def report_lint(res: bool | None) -> bool:
+    if res is None:
+        print("      skipped: pyflakes is not installed (pip install pyflakes); CI always runs it")
+    return res is not False
+
+
 def dashboard_is_self_contained() -> list[str]:
     bad = []
     for p in (ROOT / "src" / "nodetrust" / "dashboard" / "static").glob("*"):
@@ -66,8 +86,9 @@ def dashboard_is_self_contained() -> list[str]:
 
 def main() -> int:
     ok = True
-    print("[1/4] compileall")
+    print("[1/4] compileall + lint (pyflakes)")
     ok &= all(compileall.compile_dir(str(ROOT / d), quiet=1) for d in ("src", "tests", "e2e"))
+    ok &= report_lint(lint())
     print("[2/4] tests")
     ok &= subprocess.call([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=ROOT) == 0
     if (ROOT.parent / "nodetrust-ci" / "src" / "nodetrust_ci" / "cli.py").is_file():

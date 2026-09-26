@@ -5,7 +5,6 @@
 
 import sqlite3
 
-import pytest
 from fastapi.testclient import TestClient
 
 from nodetrust.api.app import create_app

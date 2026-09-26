@@ -27,7 +27,6 @@ from nodetrust.api import schemas as S
 from nodetrust.api.auth import (AuthThrottle, Principal, create_key, create_project, require_operator,
                                 require_principal, require_project)
 from nodetrust.config import Settings
-from nodetrust.contracts import EvidenceStatus
 from nodetrust.exposure.drift import compute_drift
 from nodetrust.exposure.report import baseline_report
 from nodetrust.exposure.scans import FetchBudget, latest_scans, load_scan
