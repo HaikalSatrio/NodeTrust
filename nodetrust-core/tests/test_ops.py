@@ -129,3 +129,17 @@ def test_installed_demo_cli_without_fixtures_fails_clearly(tmp_path, monkeypatch
     monkeypatch.chdir(tmp_path)
     assert main(["demo"]) == 2
     assert "--fixtures" in capsys.readouterr().err
+
+
+def test_demo_refuses_a_database_with_real_data(tmp_path):
+    from nodetrust.incidents import create_incident
+
+    db = Database(tmp_path / "real.db")
+    with db.transaction() as con:
+        inc = create_incident(con, title="real incident", name="left-pad", affected={"versions": ["1.3.0"]},
+                              risk_score=80, source="osv", source_ref="osv:MAL-0000-real:left-pad")
+    with pytest.raises(SystemExit, match="fresh"):
+        seed_demo(db, FIXTURES)
+    with db.read() as con:
+        row = con.execute("SELECT is_simulation FROM incident WHERE id=?", (inc["id"],)).fetchone()
+        assert row["is_simulation"] == 0 and con.execute("SELECT COUNT(*) FROM project").fetchone()[0] == 0

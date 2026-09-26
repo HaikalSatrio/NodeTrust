@@ -16,7 +16,7 @@ from nodetrust.api.auth import create_key, create_project
 from nodetrust.contracts import EvidenceStatus
 from nodetrust.graph.centrality import compute_and_cache
 from nodetrust.graph.store import upsert_packument
-from nodetrust.incidents import create_incident, list_incidents, update_evidence
+from nodetrust.incidents import create_incident, update_evidence
 from nodetrust.intel.osv import import_records, iter_dir
 from nodetrust.pipeline import PipelineConfig, submit_scan
 from nodetrust.policy.config import PolicyConfig, save_policy
@@ -41,9 +41,13 @@ def _ingest(db: Database, path: Path, *, signals: bool) -> None:
 
 
 def seed_demo(db: Database, fixtures: Path) -> dict:
+    # Only ever into an empty database: seeding next to real data would mix synthetic scans and
+    # simulated incidents with real ones.
     with db.read() as con:
-        if con.execute("SELECT 1 FROM project WHERE name LIKE 'demo-%'").fetchone():
-            raise SystemExit("demo data already present in this database; use a fresh NODETRUST_DB_PATH")
+        for table in ("project", "incident", "advisory", "pkg_version"):
+            if con.execute(f"SELECT 1 FROM {table} LIMIT 1").fetchone():
+                raise SystemExit(f"this database already has data ({table}); the demo needs a fresh "
+                                 "NODETRUST_DB_PATH")
     for p in sorted((fixtures / "packuments").glob("*.json")):
         _ingest(db, p, signals=False)  # baseline ingest: history is not news
     _ingest(db, fixtures / "update" / "ntdemo-utils.json", signals=True)
@@ -52,8 +56,7 @@ def seed_demo(db: Database, fixtures: Path) -> dict:
         compute_and_cache(con)
         # Mark crawler output from the demo as simulation, and add one human-"verified"
         # simulated incident so the enforce/approval path can be shown.
-        for inc in list_incidents(con):
-            con.execute("UPDATE incident SET is_simulation=1 WHERE id=?", (inc["id"],))
+        con.execute("UPDATE incident SET is_simulation=1 WHERE name LIKE 'ntdemo-%' OR name LIKE '@ntdemo/%'")
         sim = create_incident(con, title="SIMULATION: compromised ntdemo-utils@2.1.1 (demo scenario)",
                               name="ntdemo-utils", affected={"versions": ["2.1.1"]}, risk_score=92,
                               source="manual", is_simulation=True,
