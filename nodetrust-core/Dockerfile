@@ -1,6 +1,6 @@
-# NOT yet built/verified (Docker unavailable offline on the dev machine). Pin the base image
-# by digest before release (NT-044 provenance).
-FROM python:3.12-slim
+# Built and run on 26 Sep 2026 (compose up, healthcheck, demo, API from the host; the test suite passes
+# inside this image). Base image pinned by index digest; bump tag and digest together (NT-044).
+FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN useradd --create-home --uid 10001 nodetrust

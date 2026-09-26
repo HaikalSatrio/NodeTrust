@@ -44,10 +44,11 @@ cp .env.example .env         # set NODETRUST_ADMIN_TOKEN (32+ random characters)
 docker compose up --build    # API on 127.0.0.1:8080, worker next to it
 ```
 
-Verified so far: `docker compose config` accepts the file with and without the `neo4j` profile, and every
-published port binds to 127.0.0.1. **Not yet verified:** building and starting the images, because pulling
-`python:3.12-slim` and installing dependencies needs network access. Pin the base images by digest before
-any release (NT-044).
+Verified on 26 Sep 2026 from a clean clone: images build, the API turns healthy, the worker runs, the demo
+seeds inside the container and the API answers from the host. The root filesystem is read-only, the
+process runs as a non-root user and every published port binds to 127.0.0.1. The full test suite and
+pyflakes also pass inside the built image, with the newest dependency versions pip resolved there.
+Base images are pinned by digest. If port 8080 is taken on your machine, set `NODETRUST_PORT` in `.env`.
 
 ## Neo4j (optional)
 
