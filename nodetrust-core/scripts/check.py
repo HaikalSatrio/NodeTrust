@@ -71,6 +71,19 @@ def report_lint(res: bool | None) -> bool:
     return res is not False
 
 
+def workflows_pinned() -> list[str]:
+    """Every `uses:` in .github/workflows must be pinned to a full commit SHA (tags are mutable)."""
+    import re as _re
+
+    bad = []
+    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+        for i, line in enumerate(wf.read_text(encoding="utf-8").splitlines(), 1):
+            m = _re.search(r"uses:\s*([^\s#]+)", line)
+            if m and not m.group(1).startswith("./") and not _re.fullmatch(r"[0-9a-f]{40}", m.group(1).split("@")[-1]):
+                bad.append(f"{wf.relative_to(ROOT)}:{i}: '{m.group(1)}' is not pinned to a full commit SHA")
+    return bad
+
+
 def dashboard_is_self_contained() -> list[str]:
     bad = []
     for p in (ROOT / "src" / "nodetrust" / "dashboard" / "static").glob("*"):
@@ -102,8 +115,8 @@ def main() -> int:
     for h in hits:
         print("  " + h)
     ok &= not hits
-    print("[4/4] dashboard self-contained")
-    bad = dashboard_is_self_contained()
+    print("[4/4] dashboard self-contained, workflow actions pinned")
+    bad = dashboard_is_self_contained() + workflows_pinned()
     for b in bad:
         print("  " + b)
     ok &= not bad
