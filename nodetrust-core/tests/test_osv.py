@@ -86,3 +86,21 @@ def test_api_client_records_failures(db):
         assert con.execute("SELECT last_error FROM sync_status WHERE source='intel:osv'").fetchone()[0]
     t.routes["https://osv.test/v1/query"] = [Response(200, json.dumps({"vulns": [rec("GHSA-q", "lib", versions=["1.0.0"])]}).encode())]
     assert OsvClient(db, t, "https://osv.test/v1", sleep=lambda s: None).query_package("lib").inserted == 1
+
+
+def test_api_client_follows_next_page_token(db):
+    url = "https://osv.test/v1/query"
+    page1 = {"vulns": [rec("GHSA-p1", "lib", versions=["1.0.0"])], "next_page_token": "tok-2"}
+    page2 = {"vulns": [rec("GHSA-p2", "lib", versions=["1.0.1"])]}
+    t = FakeTransport({url: [Response(200, json.dumps(page1).encode()), Response(200, json.dumps(page2).encode())]})
+    assert OsvClient(db, t, "https://osv.test/v1", sleep=lambda s: None).query_package("lib").inserted == 2
+    assert [u for _, u in t.calls] == [url, url]
+
+
+def test_api_client_refuses_endless_pagination(db):
+    endless = {"vulns": [], "next_page_token": "again"}
+    t = FakeTransport({"https://osv.test/v1/query": [Response(200, json.dumps(endless).encode())]})
+    with pytest.raises(TransportError, match="exceeds 3 pages"):
+        OsvClient(db, t, "https://osv.test/v1", sleep=lambda s: None).query_package("lib", max_pages=3)
+    with db.read() as con:
+        assert con.execute("SELECT COUNT(*) FROM advisory").fetchone()[0] == 0

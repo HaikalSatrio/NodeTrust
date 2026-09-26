@@ -212,21 +212,33 @@ class OsvClient:
         self.db, self.transport, self.api_url, self.timeout = db, transport, api_url.rstrip("/"), timeout
         self.sleep = sleep
 
-    def query_package(self, name: str) -> ImportReport:
-        body = json.dumps({"package": {"ecosystem": _OSV_ECOSYSTEM, "name": name}}).encode()
-        try:
-            resp = fetch_with_retry(self.transport, "POST", f"{self.api_url}/query", timeout=self.timeout,
-                                    max_bytes=20 * 1024 * 1024, body=body, sleep=self.sleep,
-                                    headers={"content-type": "application/json"})
-        except (TransportError, NetworkDisabled) as e:
-            self.db.set_sync("intel:osv", ok=False, error=str(e))
-            raise
-        if resp.status != 200:
-            self.db.set_sync("intel:osv", ok=False, error=f"HTTP {resp.status}")
-            raise TransportError(f"OSV HTTP {resp.status}")
-        try:
-            vulns = json.loads(resp.body).get("vulns", [])
-        except ValueError as e:
-            self.db.set_sync("intel:osv", ok=False, error="invalid JSON")
-            raise TransportError("OSV returned invalid JSON") from e
-        return import_records(self.db, vulns, source="osv-api")
+    def query_package(self, name: str, *, max_pages: int = 50) -> ImportReport:
+        """All OSV records for one npm package. Follows `next_page_token`, which OSV returns when a
+        result set is split, so a long history is never silently truncated."""
+        vulns: list = []
+        token = None
+        for _ in range(max_pages):
+            query = {"package": {"ecosystem": _OSV_ECOSYSTEM, "name": name}}
+            if token:
+                query["page_token"] = token
+            try:
+                resp = fetch_with_retry(self.transport, "POST", f"{self.api_url}/query", timeout=self.timeout,
+                                        max_bytes=20 * 1024 * 1024, body=json.dumps(query).encode(), sleep=self.sleep,
+                                        headers={"content-type": "application/json"})
+            except (TransportError, NetworkDisabled) as e:
+                self.db.set_sync("intel:osv", ok=False, error=str(e))
+                raise
+            if resp.status != 200:
+                self.db.set_sync("intel:osv", ok=False, error=f"HTTP {resp.status}")
+                raise TransportError(f"OSV HTTP {resp.status}")
+            try:
+                page = json.loads(resp.body)
+            except ValueError as e:
+                self.db.set_sync("intel:osv", ok=False, error="invalid JSON")
+                raise TransportError("OSV returned invalid JSON") from e
+            vulns += page.get("vulns", []) if isinstance(page, dict) else []
+            token = page.get("next_page_token") if isinstance(page, dict) else None
+            if not token:
+                return import_records(self.db, vulns, source="osv-api")
+        self.db.set_sync("intel:osv", ok=False, error=f"more than {max_pages} OSV pages for {name}")
+        raise TransportError(f"OSV result for {name} exceeds {max_pages} pages; nothing imported")
