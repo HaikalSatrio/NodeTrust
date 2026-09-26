@@ -41,4 +41,4 @@ engine is NT-015, and validation is NT-014/NT-016 (owner: Haikal). Every output 
 | Forecast | not validated; stand-in only |
 | Historical incident replay | not started (NT-014/016) |
 | Live npm feed endpoint and response shape | verified live 26 Sep 2026 (`docs/audit/live-checks.md`) |
-| OSV API query path | implemented, tested against fakes only |
+| OSV API query path and `all.zip` import | verified live 26 Sep 2026 (`docs/audit/live-checks.md`) |

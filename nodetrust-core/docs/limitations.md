@@ -10,8 +10,8 @@
 - **The registry graph answers "could pull in"**, not "does pull in". Only the client SBOM gives exact exposure.
 - **Graph components are stand-ins** (SQLite + networkx) pending NT-004/008/012/013. They are sized for
   thousands of nodes. The 500K-node target is NT-036/NT-043.
-- **Live data paths are partly verified.** The npm change feed and packument fetch ran against npm on
-  26 Sep 2026 (`docs/audit/live-checks.md`). Real npm packuments were also replayed offline from a local
+- **Live data paths are partly verified.** The npm change feed, packument fetch, the OSV `all.zip` import and
+  the OSV API ran against the real services on 26 Sep 2026 (`docs/audit/live-checks.md`). Real npm packuments were also replayed offline from a local
   npm cache (`docs/audit/real-data-check.md`).
   SMTP was tested as a real SMTP/STARTTLS conversation on 127.0.0.1, not against a real mail provider.
   SMTPS on port 465 (implicit TLS) is not supported: use STARTTLS, usually on port 587.
