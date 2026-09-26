@@ -16,7 +16,7 @@ services:
       NODETRUST_DB_PATH: /data/nodetrust.db
       NODETRUST_ALERT_OUTBOX_DIR: /data/outbox
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${NODETRUST_PORT:-8080}:8080"  # host port configurable when 8080 is taken
     volumes:
       - nodetrust-data:/data
     read_only: true
