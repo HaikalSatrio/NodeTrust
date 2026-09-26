@@ -25,5 +25,6 @@
 - **Targeted fetches are rate-limited on purpose.** A large SBOM full of packages the graph has not seen fills
   its per-scan budget (default 200). The rest stay UNKNOWN until later scans or the feed bring them in.
 - **Failed-auth throttling is in memory** and per process, so a restart resets it. It is not a WAF.
-- **D05 radius on small projects.** With the default 20% threshold, most exposures in small projects count
-  as "large", so they escalate instead of gating. NT-001 agreed to revise this, but the option is not chosen yet.
+- **D05 radius (option 1, agreed 26 Sep 2026).** Large = A ≥ 100 affected versions, or T ≥ 200 versions in the
+  scan and A/T ≥ 20%. The minimum of 200 is an initial MVP value, not validated. The decision also mentions
+  escalation across ≥ 2 projects; that rule is not defined precisely yet and is not implemented.

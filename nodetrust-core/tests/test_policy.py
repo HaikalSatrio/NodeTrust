@@ -66,12 +66,22 @@ def test_s4_verified_small_radius_monitor_warns_enforce_gates_only_if_preauthori
     assert e_yes.decision is Decision.GATE and exit_code_for(e_yes.decision) == 1
 
 
-# Scenario 5: D05 thresholds are inclusive
-@pytest.mark.parametrize("affected,total,large", [(99, 1000, False), (100, 1000, True), (19, 100, False),
-                                                  (20, 100, True)])
+# Scenario 5: D05 option 1 (agreed 26 Sep 2026), all thresholds inclusive:
+# large when A >= 100, or T >= 200 and A/T >= 20%.
+@pytest.mark.parametrize("affected,total,large", [
+    (99, 1000, False), (100, 1000, True), (100, 150, True), (99, 150, False),  # absolute threshold, any T
+    (39, 200, False), (40, 200, True), (79, 400, False), (80, 400, True),      # just below / exactly 20%
+    (40, 199, False), (60, 199, False), (60, 200, True),                       # T = 199 / 200
+    (2, 3, False),                                                             # small project, 66%
+])
 def test_s5_radius_thresholds(affected, total, large):
     r = {"status": "KNOWN", "affected_versions": affected, "total_versions": total, "ratio": affected / total}
     assert radius_is_large(r, P()) is large
+
+
+def test_s5_empty_scan_is_not_a_valid_ratio():
+    r = {"status": "KNOWN", "affected_versions": 0, "total_versions": 0, "ratio": None}
+    assert radius_is_large(r, P()) is None
 
 
 # Scenario 6: incomplete/truncated radius is UNKNOWN -> approval path, never "small"

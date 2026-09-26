@@ -2,7 +2,7 @@
 
 > **Status: DISEPAKATI.** Review ini disetujui Haikal dan Brian. NT-001 ditandai Done di Sheet pada
 > 26 Sep 2026 (08:10 UTC), dengan tabel di bawah tercatat di kolom Catatan baris NT-001.
-> Masih terbuka: pilihan opsi revisi D05 (lihat "Tindak lanjut").
+> Keputusan final D05: opsi 1 (dicatat di Sheet, 26 Sep 2026). Masih terbuka: definisi "eskalasi lintas ≥2 project".
 
 Implementasi di `nodetrust-core` mengikuti D01–D07 apa adanya. Parameternya ditaruh di policy per project
 yang terversi, jadi keputusan final cukup mengubah nilai tanpa menulis ulang kode. Catatan di bawah muncul
@@ -23,8 +23,15 @@ saat D01–D07 diterjemahkan ke kode dan tes.
 - **D01 (b):** SBOM default dari lockfile dan Syft opsional dengan pin sudah disepakati. Teks acceptance NT-024
   ("menjalankan Syft") di backlog perlu disesuaikan.
 - **D04:** definisi "coverage incomplete" dan skor 80 untuk `MAL-*` disepakati sesuai implementasi saat ini.
-- **D05:** revisi disepakati, tetapi opsinya (1, 2 atau 3) belum dipilih. Sampai dipilih, kode tetap memakai
-  ambang 20% (sama dengan opsi 3).
+- **D05: opsi 1 (keputusan final 26 Sep 2026).** A = versi unik terdampak, T = versi npm unik dalam scan.
+  Radius besar jika A ≥ 100 ATAU (T ≥ 200 DAN A/T ≥ 20%); untuk T < 200 hanya A ≥ 100 yang berlaku.
+  Radius tidak diketahui/terpotong tetap UNKNOWN; T = 0 bukan rasio valid. N = 200 adalah nilai awal MVP,
+  belum tervalidasi. **Sudah diterapkan** (`radius_pct_min_total`, default 200) dan diuji di batas
+  A = 99/100, T = 199/200, tepat 20% dan di bawahnya, serta contoh 2/3, 39/200, 40/200, 100/150.
+- **Belum jelas:** keputusan D05 menyebut "eskalasi lintas ≥2 project tetap berlaku", tetapi aturan itu tidak
+  terdefinisi di Sheet maupun di kode (tab "NT-001 Scope" sudah dihapus). Perlu definisi sebelum diterapkan.
+- **Demo (NT-027):** `demo-exposed` sekarang berakhir `gate`, bukan `pending_approval`, karena project demo
+  kecil (T < 200). Alur approval tetap teruji di `tests/test_api.py`.
 
 ## Usulan tambahan (di luar tabel D01–D07, belum disepakati)
 
@@ -38,4 +45,4 @@ saat D01–D07 diterjemahkan ke kode dan tes.
 - [x] Brian mereview; hasilnya dicatat (tabel di atas, juga di Sheet baris NT-001)
 - [x] Keputusan final, tanggal dan pihak yang menyetujui dicatat: Haikal dan Brian, 26 Sep 2026
 - [ ] Dampak ke scope/kontrak/kriteria/estimasi downstream diselaraskan: acceptance NT-024, estimasi ulang
-  NT-025 (scope D01), pilihan opsi D05
+  NT-025 (scope D01), definisi eskalasi lintas ≥2 project

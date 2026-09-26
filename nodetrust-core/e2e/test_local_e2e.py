@@ -66,13 +66,13 @@ def run_ci(url, project, key, mode="monitor", commit="f" * 40, timeout="10", ext
     return p.returncode, p.stdout + p.stderr
 
 
-def test_exposed_project_is_held_for_approval(server, tmp_path):
+def test_exposed_project_is_gated(server, tmp_path):
     url, seeded, _ = server
     p = seeded["projects"]["demo-exposed"]
     out_file = tmp_path / "verdict.json"
     code, out = run_ci(url, p["id"], p["ci_key"], mode="enforce", extra=("--out", str(out_file)))
     assert code == 1, out
-    assert "decision=pending_approval" in out
+    assert "decision=gate" in out  # small project radius under D05 option 1, gate pre-authorised
     assert p["ci_key"] not in out  # key never printed (no GITHUB_ACTIONS -> no mask line either)
     import json
     v = json.loads(out_file.read_text(encoding="utf-8"))
@@ -165,7 +165,7 @@ def test_action_submit_step_writes_outputs_and_exit_code(server, tmp_path):
     p = seeded["projects"]["demo-exposed"]
     code, out, outputs = run_action_submit(url, p["id"], p["ci_key"], tmp_path, mode="enforce")
     assert code == 1, out
-    assert outputs["decision"] == "pending_approval" and outputs["exit-code"] == "1"
+    assert outputs["decision"] == "gate" and outputs["exit-code"] == "1"
     assert Path(outputs["verdict-path"]).is_file()
     assert f"::add-mask::{p['ci_key']}" in out  # masked before anything else can print it
     assert p["ci_key"] not in out.replace(f"::add-mask::{p['ci_key']}", "")

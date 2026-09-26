@@ -78,11 +78,15 @@ class Evaluation:
 
 
 def radius_is_large(radius: dict, policy: PolicyConfig) -> bool | None:
-    """True/False for a known radius, None when UNKNOWN (treated like large, D05)."""
-    if radius.get("status") != "KNOWN":
+    """D05 (option 1): True/False for a known radius, None when UNKNOWN (treated like large).
+
+    Large when A >= abs threshold, or T >= pct_min_total and A/T >= pct threshold. T = 0 is not a
+    valid ratio, so it is UNKNOWN rather than small.
+    """
+    if radius.get("status") != "KNOWN" or not radius.get("total_versions"):
         return None
-    return (radius["affected_versions"] >= policy.radius_abs_threshold
-            or radius["ratio"] >= policy.radius_pct_threshold)
+    a, t = radius["affected_versions"], radius["total_versions"]
+    return a >= policy.radius_abs_threshold or (t >= policy.radius_pct_min_total and a / t >= policy.radius_pct_threshold)
 
 
 def _r(code: str, message: str, **extra) -> dict:

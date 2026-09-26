@@ -72,7 +72,8 @@ def test_demo_seed_produces_expected_decisions(tmp_path):
     out = seed_demo(db, FIXTURES)
     assert out["scans"]["demo-exposed/exposed-old"]["decision"] == "pass"
     new = out["scans"]["demo-exposed/exposed-new"]
-    assert new["decision"] == "pending_approval" and "simulation" in new["labels"]
+    # D05 option 1: the demo project is small (T < 200), so its radius is small and the pre-authorised gate applies
+    assert new["decision"] == "gate" and "simulation" in new["labels"]
     assert out["scans"]["demo-clean/clean"]["decision"] == "pass"
     with db.read() as con:
         crawler = con.execute("SELECT risk_score, evidence_status FROM incident WHERE source='crawler'").fetchall()

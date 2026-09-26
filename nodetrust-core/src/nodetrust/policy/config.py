@@ -25,9 +25,13 @@ class PolicyConfig(BaseModel):
     # D04: enforce-mode actions must be pre-authorised in the policy version.
     preauthorize_gate_verified_critical: bool = False
     preauthorize_hold_large_radius: bool = False
-    # D05: "large" radius inside one project (inclusive thresholds).
+    # D05 (option 1, agreed 26 Sep 2026): "large" radius inside one project, all thresholds inclusive.
+    # A = affected versions, T = unique npm versions in the scan. Large when A >= radius_abs_threshold,
+    # or when T >= radius_pct_min_total and A/T >= radius_pct_threshold. Small projects (T below the
+    # minimum) use the absolute threshold alone. N=200 is an initial MVP value, not validated.
     radius_abs_threshold: int = Field(default=100, ge=1)
     radius_pct_threshold: float = Field(default=0.20, gt=0, le=1)
+    radius_pct_min_total: int = Field(default=200, ge=1)
     # D06
     stale_after_hours: float = Field(default=24.0, gt=0)
     override_max_hours: float = Field(default=24.0, gt=0, le=24.0)

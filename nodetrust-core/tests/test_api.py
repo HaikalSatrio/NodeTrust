@@ -217,9 +217,9 @@ def test_s4_gate_requires_preauthorisation(env):
     v = scan(client, pid, ci, BIG).json()
     assert v["decision"] == "gate" and v["exit_code"] == 1 and v["policy_version"] == 3
     assert v["findings"][0]["radius"]["affected_versions"] == 2 and v["findings"][0]["radius"]["total_versions"] == 23
-    # the same exposure in a 3-package project is a "large" radius (66% >= 20%): escalate, no gate
+    # D05 option 1: in a 3-package project 2/3 is still a small radius (T < 200: only A >= 100 counts)
     small = scan(client, pid, ci, TREE, commit=C2).json()
-    assert small["decision"] == "warn" and small["findings"][0]["reasons"][0]["code"] == "escalate"
+    assert small["decision"] == "gate" and small["findings"][0]["radius"]["total_versions"] == 3
 
 
 def test_large_radius_hold_and_human_approval(env):
