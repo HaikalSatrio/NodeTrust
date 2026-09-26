@@ -3,8 +3,9 @@
 A GitHub Action that builds an SBOM for an npm project, sends it to a NodeTrust server, and turns the
 project's policy verdict into a CI result: annotations, a step summary and an exit code.
 
-> **Status: MVP, not released.** Tested locally (unit tests, plus end-to-end against a local nodetrust-core over
-> loopback). It has **not yet run on a real GitHub runner**, and the Syft path has not been exercised.
+> **Status: MVP, not released.** Tested with unit tests, end-to-end tests against a local nodetrust-core, and
+> the action's own steps run under `bash -eo pipefail` in an `ubuntu:24.04` container, both the lockfile and
+> the Syft path (Syft 1.52.0). It has **not yet run on a real GitHub-hosted runner**.
 
 ## Usage
 
@@ -64,7 +65,11 @@ See [nodetrust-core docs/data-sent.md](../nodetrust-core/docs/data-sent.md).
 NodeTrust is a supply-chain security tool, so it should not pull an unpinned third-party binary into your
 build. The default builds the SBOM from `package-lock.json` (v2/v3) with the standard library. With
 `sbom-generator: syft`, the action downloads the exact Syft release you name and **verifies its sha256
-before running it**. If Syft's SBOM lacks dependency relations, they are filled in from the lockfile.
+before running it**. A wrong checksum stops the job before Syft runs. The action asks Syft for CycloneDX 1.6,
+because recent Syft releases default to 1.7 and the server accepts 1.4 to 1.6. If Syft's SBOM lacks
+dependency relations, they are filled in from the lockfile. Syft also lists your own package as a library
+next to its directory root, so the client drops it: the project is the root, not a dependency. For the
+checked fixture, the Syft path and the lockfile path produced the same verdict.
 
 ## Untrusted pull requests
 

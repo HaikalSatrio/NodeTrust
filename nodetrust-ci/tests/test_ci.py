@@ -97,6 +97,34 @@ def test_enrich_generator_sbom_without_relations_and_minimize():
     assert set(small) == {"bomFormat", "specVersion", "version", "metadata", "components", "dependencies"}
 
 
+def test_enrich_drops_the_project_itself_that_syft_lists_as_a_library():
+    # Shape seen with Syft 1.52 (cyclonedx-json@1.6) on examples/fixture-repo: the directory is the
+    # metadata root, the project's own package appears as a library, plus a `file` component.
+    lock, _ = sbom_from_lockfile(FIX / "package-lock.json")
+    root = lock["metadata"]["component"]
+    self_purl = P(root["name"], root["version"])
+    syft = {"bomFormat": "CycloneDX", "specVersion": "1.6",
+            "metadata": {"component": {"type": "file", "name": ".", "bom-ref": "dir-root"}},
+            "components": [
+                {"type": "library", "bom-ref": "self-id", "name": root["name"], "version": root["version"],
+                 "purl": self_purl},
+                {"type": "library", "bom-ref": "web-id", "name": "ntdemo-web", "version": "5.0.0",
+                 "purl": P("ntdemo-web", "5.0.0")},
+                {"type": "file", "bom-ref": "lockfile-id", "name": "/package-lock.json"}]}
+    enriched, notes = enrich(syft, lock)
+    assert self_purl not in {c.get("purl") for c in enriched["components"]}
+    assert any("is the SBOM root" in n for n in notes)
+    reachable, todo = set(), ["dir-root"]
+    rel = {d["ref"]: d["dependsOn"] for d in enriched["dependencies"]}
+    while todo:
+        for nxt in rel.get(todo.pop(), []):
+            if nxt not in reachable:
+                reachable.add(nxt)
+                todo.append(nxt)
+    npm = {c["bom-ref"] for c in enriched["components"] if (c.get("purl") or "").startswith("pkg:npm/")}
+    assert npm <= reachable  # every npm component hangs off the root: coverage is complete
+
+
 # ---------------------------------------------------------------- client
 
 def fake_clock():

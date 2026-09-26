@@ -86,7 +86,8 @@ runs:
         SYFT: ${{ runner.temp }}/nodetrust-syft/syft
       run: |
         set -euo pipefail
-        "$SYFT" scan dir:. -q -o "cyclonedx-json=$OUT"
+        # Ask for the CycloneDX version the server contract accepts (1.4-1.6); Syft >= 1.5x defaults to 1.7.
+        "$SYFT" scan dir:. -q -o "cyclonedx-json@1.6=$OUT"
 
     - name: Submit to NodeTrust
       id: submit

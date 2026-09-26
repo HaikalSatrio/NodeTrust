@@ -8,6 +8,8 @@ tool properties. The exact list is in README ("What is sent").
 
 from __future__ import annotations
 
+from nodetrust_ci.lockfile import npm_purl
+
 KEEP_COMPONENT = ("type", "bom-ref", "name", "version", "purl", "scope")
 
 
@@ -26,7 +28,19 @@ def enrich(sbom: dict, lock_sbom: dict) -> tuple[dict, list[str]]:
     matched by purl. Components found only in the lockfile are added."""
     notes: list[str] = []
     out = dict(sbom)
-    comps = [dict(c) for c in sbom.get("components") or [] if isinstance(c, dict)]
+    # Syft lists the project's own package (name@version from package.json) as an ordinary library
+    # next to its directory root. It is the root, not a dependency; kept, it would be unreachable
+    # from the root and turn the whole scan into "coverage incomplete" (found with Syft 1.52).
+    lroot = (lock_sbom.get("metadata") or {}).get("component") or {}
+    self_purl = npm_purl(lroot["name"], lroot["version"]) if lroot.get("name") and lroot.get("version") else None
+    comps = []
+    for c in sbom.get("components") or []:
+        if not isinstance(c, dict):
+            continue
+        if self_purl and c.get("purl") == self_purl:
+            notes.append(f"the project itself ({self_purl}) is the SBOM root, not a dependency")
+            continue
+        comps.append(dict(c))
     by_purl = {c.get("purl"): c for c in comps if c.get("purl")}
     ref_for: dict[str, str] = {}
     for c in lock_sbom["components"]:
