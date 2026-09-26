@@ -20,7 +20,7 @@ def test_empty_admin_token_disables_operator_endpoints(token):
 
 
 def test_strong_admin_token_is_accepted():
-    token = "Zq3v9-4hKp2mX8rT1wLs6YbN0cFgJd7A"
+    token = "nodetrust-test-operator-token-0123456789"  # obviously fake, 40 chars
     assert Settings(admin_token=token).admin_token.get_secret_value() == token
 
 

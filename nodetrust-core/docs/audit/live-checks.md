@@ -14,6 +14,13 @@ changed because of them. Requests used each tool's own client identity. No proje
 - Inside the built image, pip resolved newer versions than the development laptop (e.g. FastAPI 0.141,
   Starlette 1.7, networkx 3.7, pytest 9, pyflakes 4). The full suite (177 tests) and pyflakes pass there.
   Starlette warns that `httpx` with its test client is deprecated; tests still pass.
+- 27 Sep: `docs/setup.md` followed word for word from fresh clones and empty venvs, installing from PyPI.
+  Windows Python 3.12.4, Linux `python:3.11-slim` (3.11.16) and `python:3.12-slim` (3.12.14): both gates
+  PASS, lint and e2e included, so "Python 3.11+" holds.
+- 27 Sep: full git history scanned (`scripts/scan_history.py`): 26 + 8 commits, no token-shaped secrets,
+  no `.env`, database or key file ever committed. A random-looking test token was replaced with an obviously
+  fake one so secret scanners do not flag it. The old test value stays in history; it was never a
+  credential.
 - **Changed:** images pinned by index digest (`python:3.12-slim@sha256:f77ac9e4…`,
   `neo4j:5.26-community@sha256:5eb12ad7…`); API host port configurable (`NODETRUST_PORT`).
 

@@ -13,6 +13,18 @@ python scripts/check.py               # must print PASS
 
 With `nodetrust-ci` cloned in the same parent directory, `check.py` also runs the local end-to-end suite
 (`e2e/`: the real CI client against a running core over 127.0.0.1). Without it, that step is skipped.
+The same venv also runs `nodetrust-ci`'s gate: `cd ../nodetrust-ci && python scripts/check.py`.
+
+These exact steps were run on 27 Sep 2026 from fresh clones and empty venvs, installing from PyPI: Windows
+(Python 3.12.4) and Linux (`python:3.11-slim` 3.11.16 and `python:3.12-slim` 3.12.14). Both gates printed
+PASS, including lint and the e2e suite.
+
+### Checking for secrets
+
+`check.py` scans the working tree. To check every version of every file ever committed, including files
+deleted later, run `python scripts/scan_history.py` (and `python scripts/scan_history.py ../nodetrust-ci`).
+Token-shaped secrets or committed `.env`, database or key files fail it. Assignments that only look like a
+secret are listed for a human to judge.
 
 Python 3.11+ is required. Dependencies: FastAPI, uvicorn, pydantic (+settings), httpx, networkx.
 Development adds pytest, pyflakes (lint) and cryptography (throwaway TLS certificates in the SMTP tests).

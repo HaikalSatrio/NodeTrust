@@ -20,18 +20,33 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
   ci **19 tes**. Semua offline, tanpa request keluar.
 - Coba dashboard: `README.md` → "Quick start (offline demo)" (`nodetrust demo`, lalu `nodetrust serve`).
 
-## 2. Urutan review yang disarankan
+## 2. Urutan review (ikuti dependensi di backlog)
 
-1. **Kontrak bersama** (`src/nodetrust/contracts/`, `docs/contracts.md`, exit code CI 0/1/2/3).
-   Ini milikmu (NT-003). Drafnya ditulis Brian supaya task-nya bisa terintegrasi. Perubahan di sini harus
-   dilakukan di dua repo sekaligus.
-2. **NT-001 sudah Done**: D01–D07 disepakati 26 Sep 2026 (`docs/decisions/NT-001-brian-review.md`).
-   D05 opsi 1 sudah diterapkan dan diuji. Aturan "eskalasi lintas ≥2 project" belum terdefinisi.
-3. **Bagian yang sensitif secara keamanan**: `api/auth.py`, `sbom/`, `alerts/` (SMTP), `nodetrust-ci`
-   (`action.yml`, client). Hasil self-review ada di `docs/audit/NT-040-audit.md` §6–§7.
-   NT-041 (audit keamanan independen olehmu) tetap diperlukan.
-4. **Stand-in di area kamu** (tabel §5). Pilih mana yang diganti dan mana yang dipertahankan.
-5. Task Brian lainnya (tabel §3).
+Semua task Brian sudah dibangun lebih awal dari jadwalnya, jadi review dan Done harus mengikuti urutan
+dependensi, bukan nomor task. Sebuah task baru bisa Done setelah semua dependensinya Done.
+
+| Urutan | Task | Butuh Done dulu | Catatan |
+|---|---|---|---|
+| 1 | **NT-040** (Brian) | – | Workflow kontributor, quality gate |
+| 2 | **NT-002** (Brian) | NT-001 ✅, NT-040 | Checklist di bawah |
+| 3 | **NT-003** (kamu) | NT-001 ✅ | Kontrak di `contracts/` masih draf stand-in dari Brian. Banyak task Brian menunggu ini. |
+| 4 | NT-006, NT-017 (Brian) | NT-002, NT-003 | |
+| 5 | NT-007 (Brian) | NT-006 | |
+| 6 | Seterusnya sesuai kolom Dependensi dan Jadwal | | Task yang bergantung pada NT-005/008/012/013/015/021 (kamu) menunggu task itu |
+
+Di luar urutan itu, bagian yang sensitif secara keamanan (`api/auth.py`, `sbom/`, `alerts/`, `nodetrust-ci`)
+tetap perlu audit independen di NT-041. Self-review ada di `docs/audit/NT-040-audit.md` §6–§7.
+
+### Checklist review NT-002 (dari kolom "Review Manusia": setup dari mesin bersih, tidak ada secret)
+
+1. Di mesinmu, clone kedua repo berdampingan, lalu ikuti `docs/setup.md` bagian "Local development" persis.
+   `python scripts/check.py` harus PASS di kedua repo.
+2. `cp .env.example .env`, isi `NODETRUST_ADMIN_TOKEN` (32+ karakter) dan `NEO4J_PASSWORD`, lalu
+   `docker compose up --build` dan `docker compose --profile neo4j up -d neo4j`. Kemudian
+   `curl http://127.0.0.1:8080/readyz` dan `python scripts/check_neo4j.py` harus OK.
+3. `python scripts/scan_history.py` dan `python scripts/scan_history.py ../nodetrust-ci`: tidak boleh ada FAIL.
+   Nilai yang didaftar "for a human to judge" adalah nilai uji. Periksa sendiri untuk memastikan.
+4. Catat jam yang kamu pakai untuk review ini di Jam Aktual.
 
 ## 3. Task Brian dan yang perlu kamu cek
 
