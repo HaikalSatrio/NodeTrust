@@ -99,7 +99,7 @@ def test_old_database_is_migrated(tmp_path):
     db = Database(path)
     assert jobs(db)["a"]["priority"] == 0
     with db.read() as c:
-        assert c.execute("SELECT value FROM meta WHERE key='schema_revision'").fetchone()[0] == "2"
+        assert c.execute("SELECT value FROM meta WHERE key='schema_revision'").fetchone()[0] == "3"
 
 
 def test_api_docs_closed_by_default(tmp_path):

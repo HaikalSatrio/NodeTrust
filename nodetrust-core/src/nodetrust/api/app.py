@@ -196,10 +196,14 @@ def create_app(settings: Settings | None = None, db: Database | None = None) -> 
         return inc
 
     @app.get("/v1/incidents")
-    def list_incidents_ep(p: Principal = Depends(principal), include_rejected: bool = False):
+    def list_incidents_ep(p: Principal = Depends(principal), include_rejected: bool = False,
+                          package: str | None = Query(None, max_length=214),
+                          limit: int = Query(500, ge=1, le=5000)):
         require_operator(p)
         with dbh.read() as con:
-            return {"incidents": list_incidents(con, include_rejected=include_rejected)}
+            rows = list_incidents(con, name=package.lower() if package else None,
+                                  include_rejected=include_rejected, limit=limit)
+            return {"incidents": rows, "limit": limit}
 
     @app.patch("/v1/incidents/{incident_id}")
     def update_incident_ep(incident_id: str, body: S.IncidentUpdate, p: Principal = Depends(principal)):

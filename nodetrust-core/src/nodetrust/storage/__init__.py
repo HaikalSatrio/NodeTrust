@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-SCHEMA_REVISION = 2
+SCHEMA_REVISION = 3
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -207,6 +207,12 @@ def _migrate(con: sqlite3.Connection) -> None:
     if "priority" not in cols:  # revision 1 -> 2
         con.execute("ALTER TABLE fetch_job ADD COLUMN priority INTEGER NOT NULL DEFAULT 0")
     con.execute("CREATE INDEX IF NOT EXISTS fetch_job_queue ON fetch_job (status, priority, requested_at)")
+    # revision 2 -> 3: the real OSV npm export has ~229k records, most of them MAL-* reports that each
+    # become an incident. Without these, every OSV record and every CI scan scanned whole tables.
+    con.execute("CREATE INDEX IF NOT EXISTS incident_source_ref ON incident (source, source_ref)")
+    con.execute("CREATE INDEX IF NOT EXISTS incident_name ON incident (ecosystem, name)")
+    con.execute("CREATE INDEX IF NOT EXISTS advisory_group ON advisory (group_id)")
+    con.execute("CREATE INDEX IF NOT EXISTS advisory_alias_advisory ON advisory_alias (advisory_id)")
 
 
 class Database:

@@ -26,7 +26,7 @@ def match_scan(con: sqlite3.Connection, scan: ScanView, *, max_paths: int = 3) -
     findings: list[Finding] = []
     complete = scan.quality is DataQuality.COMPLETE
     npm_versions = scan.npm_versions()
-    for inc in list_incidents(con):
+    for inc in list_incidents(con, names=by_name):
         comps = by_name.get(inc["name"])
         if not comps:
             continue

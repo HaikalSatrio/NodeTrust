@@ -86,15 +86,34 @@ def get_incident(con: sqlite3.Connection, incident_id: str) -> dict | None:
     return _row_to_dict(r) if r else None
 
 
-def list_incidents(con: sqlite3.Connection, *, name: str | None = None, include_rejected: bool = False) -> list[dict]:
+def list_incidents(con: sqlite3.Connection, *, name: str | None = None, names=None, include_rejected: bool = False,
+                   limit: int | None = None) -> list[dict]:
+    """Newest first. `names` restricts to those packages (used per scan, so a large incident
+    table is not parsed for every CI submission)."""
+    if names is not None:
+        wanted = sorted({n for n in names})
+        if not wanted:
+            return []
+        if len(wanted) > 900:  # stay under SQLite's bound-parameter limit
+            rows = [r for i in range(0, len(wanted), 900)
+                    for r in list_incidents(con, names=wanted[i:i + 900], include_rejected=include_rejected)]
+            rows.sort(key=lambda r: r["created_at"], reverse=True)
+            return rows[:limit] if limit else rows
     q, args = "SELECT * FROM incident WHERE 1=1", []
     if name:
         q += " AND ecosystem=? AND name=?"
         args += [ECOSYSTEM_NPM, name]
+    if names is not None:
+        q += f" AND ecosystem=? AND name IN ({','.join('?' * len(wanted))})"
+        args += [ECOSYSTEM_NPM, *wanted]
     if not include_rejected:
         q += " AND evidence_status != ?"
         args.append(EvidenceStatus.REJECTED.value)
-    return [_row_to_dict(r) for r in con.execute(q + " ORDER BY created_at DESC", args)]
+    q += " ORDER BY created_at DESC"
+    if limit:
+        q += " LIMIT ?"
+        args.append(int(limit))
+    return [_row_to_dict(r) for r in con.execute(q, args)]
 
 
 def create_incident(con: sqlite3.Connection, *, title: str, name: str, affected: dict, risk_score: int,

@@ -26,7 +26,7 @@ A key used on another project's path gets **404** (existence is not revealed). E
 | `GET /v1/metrics` | operator | counters, fetch-job states, sync status, freshness, feed checkpoint age |
 | `POST /v1/projects` | operator | create project → returns the initial **admin key once** |
 | `GET /v1/projects` | operator | list projects |
-| `POST /v1/incidents`, `GET /v1/incidents`, `PATCH /v1/incidents/{id}` | operator | curate incidents; only here can evidence become `verified` |
+| `POST /v1/incidents`, `GET /v1/incidents?package=&limit=`, `PATCH /v1/incidents/{id}` | operator | curate incidents; only here can evidence become `verified`. The list is newest first, `limit` 1-5000 (default 500), because a real OSV import creates about 220k unverified incidents |
 | `POST /v1/intel/osv/records` | operator | upload OSV records (JSON array) |
 | `GET/POST /v1/watchlist` | operator | packages the feed follows |
 | `GET /v1/graph/stats`, `GET /v1/graph/blast?name=&version=` | any | registry graph size; reverse BFS + heuristic forecast |
