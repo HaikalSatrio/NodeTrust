@@ -30,7 +30,7 @@ Read this before changing anything. It is the NT-040 workflow in practice.
 | OSV (NT-011) | `intel/` | Brian | |
 | API, auth (NT-017) | `api/` | Brian | |
 | SBOM, overlay, drift (NT-018/019/020) | `sbom/`, `exposure/` | Brian | |
-| Policy, approvals, overrides (NT-022) | `policy/` | Brian | Encodes the NT-001 draft |
+| Policy, approvals, overrides (NT-022) | `policy/` | Brian | Encodes NT-001 (D01–D07) |
 | Alerts, triage (NT-023) | `alerts/` | Brian | |
 | LKG (NT-025) | `lkg/` | Brian | |
 | Dashboard (NT-026) | `dashboard/` | Brian | Vanilla JS, CSP `'self'` only |

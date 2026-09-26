@@ -56,7 +56,7 @@ These are observations only. No weight was changed.
    targets were not ingested. On a real crawler, this depends on watchlist coverage. The weight should
    assume the graph is often partial.
 4. Alert volume. If every version of these 1,024 packages were published today, about 0.26 % would be
-   WATCH and 18 versions would reach INVESTIGATE or CRITICAL. Under the NT-001 draft, those 18 would be
+   WATCH and 18 versions would reach INVESTIGATE or CRITICAL. Under NT-001, those 18 would be
    e-mailed only to projects that actually depend on the version.
 
 ## What this does not verify

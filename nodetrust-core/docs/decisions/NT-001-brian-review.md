@@ -1,12 +1,12 @@
-# NT-001: Draf review Brian atas D01–D07
+# NT-001: Review Brian atas D01–D07 (disepakati)
 
-> **Status: DRAF untuk Brian.** Disusun saat mengimplementasikan task Brian, 25 Sep 2026.
-> Belum menjadi review resmi. Brian perlu membaca, mengubah bila perlu, lalu mencatatnya di NT-001.
-> Tidak ada keputusan yang dianggap disepakati.
+> **Status: DISEPAKATI.** Review ini disetujui Haikal dan Brian. NT-001 ditandai Done di Sheet pada
+> 26 Sep 2026 (08:10 UTC), dengan tabel di bawah tercatat di kolom Catatan baris NT-001.
+> Masih terbuka: pilihan opsi revisi D05 (lihat "Tindak lanjut").
 
-Implementasi di `nodetrust-core` mengikuti draf D01–D07 apa adanya. Parameternya ditaruh di policy per project
+Implementasi di `nodetrust-core` mengikuti D01–D07 apa adanya. Parameternya ditaruh di policy per project
 yang terversi, jadi keputusan final cukup mengubah nilai tanpa menulis ulang kode. Catatan di bawah muncul
-saat draf diterjemahkan ke kode dan tes.
+saat D01–D07 diterjemahkan ke kode dan tes.
 
 | ID | Usulan posisi Brian | Catatan dari implementasi |
 |---|---|---|
@@ -18,15 +18,24 @@ saat draf diterjemahkan ke kode dan tes.
 | D06 | Setuju dengan definisi | (a) "Satu run" = `GITHUB_RUN_ID` + `GITHUB_RUN_ATTEMPT`. Re-run attempt dihitung run baru; retry di run yang sama boleh memakai override yang sama. (b) Override terikat project + commit + versi policy + *evidence fingerprint* (hash SBOM + versi bukti setiap insiden), maksimum 24 jam. (c) Mode snapshot/demo tidak dinilai stale, tetapi setiap verdict diberi label `offline_snapshot`. (d) PR dari fork tidak mendapat secret, sehingga key kosong = error konfigurasi (exit 2). Rekomendasi: workflow melewati job untuk fork (ada di contoh). |
 | D07 | Setuju | Dua project fixture sintetis tersedia (`demo-exposed`, `demo-clean`) dengan data `ntdemo-*`. Insiden simulasi hanya berlaku di project yang mengaktifkan `include_simulations`, sehingga tidak bercampur dengan bukti nyata. Tidak ada klaim validasi forecast; output forecast berlabel `validated: false`. |
 
-## Usulan tambahan untuk disepakati
+## Tindak lanjut
+
+- **D01 (b):** SBOM default dari lockfile dan Syft opsional dengan pin sudah disepakati. Teks acceptance NT-024
+  ("menjalankan Syft") di backlog perlu disesuaikan.
+- **D04:** definisi "coverage incomplete" dan skor 80 untuk `MAL-*` disepakati sesuai implementasi saat ini.
+- **D05:** revisi disepakati, tetapi opsinya (1, 2 atau 3) belum dipilih. Sampai dipilih, kode tetap memakai
+  ambang 20% (sama dengan opsi 3).
+
+## Usulan tambahan (di luar tabel D01–D07, belum disepakati)
 
 1. **Kode exit CI**: 0 = pass/warn · 1 = gate/pending_approval · 2 = error konfigurasi (kedua mode) · 3 = assessment unavailable (enforce).
 2. **Lisensi (NT-029)**: usul Apache-2.0 (ada patent grant, umum untuk tool keamanan). Keputusan tim.
 3. **Retensi**: purge otomatis hanya untuk data operasional (fetch job selesai, file outbox). Scan, verdict, alert dan audit disimpan sampai periode retensinya disepakati.
 4. **Skor**: bobot `rules-v1` adalah draf heuristik Brian dan perlu review Haikal.
 
-## Checklist NT-001 (belum diubah)
+## Checklist NT-001
 
-- [ ] Brian mereview; hasilnya dicatat tanpa mengasumsikan persetujuan → **draf ini menunggu Brian**
-- [ ] Keputusan final, tanggal dan pihak yang menyetujui dicatat
-- [ ] Dampak ke scope/kontrak/kriteria/estimasi downstream diselaraskan
+- [x] Brian mereview; hasilnya dicatat (tabel di atas, juga di Sheet baris NT-001)
+- [x] Keputusan final, tanggal dan pihak yang menyetujui dicatat: Haikal dan Brian, 26 Sep 2026
+- [ ] Dampak ke scope/kontrak/kriteria/estimasi downstream diselaraskan: acceptance NT-024, estimasi ulang
+  NT-025 (scope D01), pilihan opsi D05

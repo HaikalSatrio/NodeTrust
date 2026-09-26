@@ -26,4 +26,4 @@
   its per-scan budget (default 200). The rest stay UNKNOWN until later scans or the feed bring them in.
 - **Failed-auth throttling is in memory** and per process, so a restart resets it. It is not a WAF.
 - **D05 radius on small projects.** With the default 20% threshold, most exposures in small projects count
-  as "large", so they escalate instead of gating. This is flagged for the NT-001 review.
+  as "large", so they escalate instead of gating. NT-001 agreed to revise this, but the option is not chosen yet.

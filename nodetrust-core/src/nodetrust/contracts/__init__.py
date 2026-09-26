@@ -1,7 +1,7 @@
 """Data contract: DRAFT stand-in for NT-003 (owner: Haikal).
 
 Brian's tasks need a shared vocabulary to integrate, so this module fixes one.
-It follows the NT-001 draft (D01–D07) but is NOT an agreed contract: Haikal owns
+It follows NT-001 (D01–D07) but is NOT an agreed contract: Haikal owns
 NT-003 and any change here must go through review by both people.
 
 Key rules encoded here:

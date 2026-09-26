@@ -25,7 +25,8 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 1. **Kontrak bersama** (`src/nodetrust/contracts/`, `docs/contracts.md`, exit code CI 0/1/2/3).
    Ini milikmu (NT-003). Drafnya ditulis Brian supaya task-nya bisa terintegrasi. Perubahan di sini harus
    dilakukan di dua repo sekaligus.
-2. **Keputusan NT-001** di `docs/decisions/NT-001-brian-review.md`. Drafnya masih perlu dibaca Brian dulu.
+2. **NT-001 sudah Done**: D01–D07 disepakati 26 Sep 2026 (`docs/decisions/NT-001-brian-review.md`).
+   Tinggal memilih opsi revisi D05.
 3. **Bagian yang sensitif secara keamanan**: `api/auth.py`, `sbom/`, `alerts/` (SMTP), `nodetrust-ci`
    (`action.yml`, client). Hasil self-review ada di `docs/audit/NT-040-audit.md` §6–§7.
    NT-041 (audit keamanan independen olehmu) tetap diperlukan.
@@ -47,9 +48,9 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 | NT-018 | Review | Validasi SBOM, batas fetch | `tests/test_sbom.py`, `test_hardening.py` | – |
 | NT-019 | Review | Overlay, choke point, unknown ≠ aman | `exposure/report.py` + tes | Bergantung stand-in NT-012/013 |
 | NT-020 | Review | Identitas commit, tanpa duplikat | `exposure/drift.py` + tes | – |
-| NT-022 | Review | Skenario NT-001 | `tests/test_policy.py` | Nilai final D04/D05 |
+| NT-022 | Review | Skenario NT-001 | `tests/test_policy.py` | Opsi revisi D05 |
 | NT-023 | Review | Dedup, retry, triage, **TLS SMTP** | `tests/test_smtp.py` (percakapan SMTP/STARTTLS asli di loopback) | Uji ke penyedia email asli; port 465 belum didukung |
-| NT-024 | In Progress | `action.yml`, exit code | + step Submit dijalankan dengan bash, output `GITHUB_OUTPUT` diuji | **Runner GitHub asli**, jalur Syft (jaringan), default lockfile vs Syft |
+| NT-024 | In Progress | `action.yml`, exit code | + step Submit dijalankan dengan bash, output `GITHUB_OUTPUT` diuji | **Runner GitHub asli**, jalur Syft (jaringan) |
 | NT-025 | Review | Tanpa LKG = tanpa pin; patch hanya draf | `lkg/` + tes | Estimasi ulang (scope berubah karena D01) |
 | NT-026 | Review | Coba dengan keyboard dan screen reader | Walkthrough keyboard otomatis: 0 isu setelah perbaikan | Screen reader dan graph besar (manusia) |
 | NT-029 | In Progress | Docs Inggris | README ×2, `docs/` | Lisensi, paket rilis (NT-028/044) |
@@ -57,11 +58,10 @@ cd ../nodetrust-ci && python scripts/check.py                                # h
 
 ## 4. Keputusan yang butuh kalian berdua
 
-1. D05: ambang radius 20% membuat project kecil selalu "radius besar". Pilih opsi 1, 2, atau 3 di draf NT-001.
-2. D04: definisi presisi "coverage incomplete", karena di mode enforce artinya build gagal.
-3. NT-024: SBOM default dari lockfile, dengan Syft opsional yang di-pin. Ini menyimpang dari teks acceptance.
-4. Kode exit CI, lisensi (usul Apache-2.0), periode retensi, skor 80 untuk `MAL-*`.
-5. NT-010, dari data asli: pindah nama paket yang sah terlihat seperti takeover, dan base version untuk
+1. D05: revisi ambang radius 20% sudah disepakati, tapi opsi 1, 2, atau 3 belum dipilih.
+2. Kode exit CI, lisensi (usul Apache-2.0), periode retensi. Ini di luar tabel NT-001.
+3. Teks acceptance NT-024 di backlog perlu disesuaikan dengan D01 (lockfile default, Syft opsional).
+4. NT-010, dari data asli: pindah nama paket yang sah terlihat seperti takeover, dan base version untuk
    prerelease/canary kadang diambil dari lini rilis lain. Detail ada di `docs/audit/real-data-check.md`.
 
 ## 5. Stand-in di area kamu

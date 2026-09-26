@@ -1,5 +1,5 @@
 """NT-022 policy engine against the NT-001 acceptance scenarios (numbers refer to
-the 'Skenario acceptance' list in the NT-001 draft)."""
+the 'Skenario acceptance' list in NT-001)."""
 
 import pytest
 

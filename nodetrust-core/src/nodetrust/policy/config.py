@@ -1,6 +1,6 @@
 """Per-project policy, versioned (NT-022).
 
-Defaults are the NT-001 draft proposals (D03–D06). They are data, so every change
+Defaults follow NT-001 (D03–D06, agreed 26 Sep 2026). They are data, so every change
 creates a new policy version and an audit entry; verdicts record the version
 they were evaluated with.
 """

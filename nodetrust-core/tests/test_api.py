@@ -1,6 +1,6 @@
 """API integration: NT-017 auth/isolation, NT-018 intake, NT-019 report, NT-020 drift,
 NT-022 policy/approval/override, NT-023 alerts/triage, NT-025 LKG, NT-042 health/audit.
-Scenario numbers refer to the NT-001 draft acceptance list."""
+Scenario numbers refer to the NT-001 acceptance list."""
 
 import json
 from datetime import datetime, timedelta, timezone

@@ -7,8 +7,8 @@ about it: pass, warn, gate, or hold for a human decision.
 This repository holds the server: registry ingestion, the package graph, risk signals, the API, policy,
 alerts and the dashboard. The GitHub Action lives in [`nodetrust-ci`](../nodetrust-ci).
 
-> **Status: MVP in progress, not released.** Scope and policy follow the NT-001 draft (D01–D07), which is
-> still **under review**. Several graph and research components are minimal stand-ins until their owners'
+> **Status: MVP in progress, not released.** Scope and policy follow NT-001 (D01–D07, agreed 26 Sep 2026;
+> the D05 revision option is still open). Several graph and research components are minimal stand-ins until their owners'
 > tasks land. See [docs/limitations.md](docs/limitations.md) and the review handover
 > [docs/review/HANDOVER-haikal.md](docs/review/HANDOVER-haikal.md) (Indonesian).
 
