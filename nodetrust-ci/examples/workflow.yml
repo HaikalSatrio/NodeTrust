@@ -1,0 +1,32 @@
+# Example: .github/workflows/nodetrust.yml in a project that uses npm (package-lock.json).
+name: nodetrust
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: the action only reads the checkout.
+permissions:
+  contents: read
+
+jobs:
+  nodetrust:
+    # Pull requests from forks get no secrets. Skip them instead of failing (see README "Untrusted PRs").
+    # Never switch this to `pull_request_target` with a checkout of the PR head.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: your-org/nodetrust-ci@v0     # pin to a full commit SHA in real use
+        with:
+          api-url: ${{ vars.NODETRUST_API_URL }}
+          project-id: ${{ vars.NODETRUST_PROJECT_ID }}
+          api-key: ${{ secrets.NODETRUST_API_KEY }}   # a key with role "ci"
+          mode: monitor                               # switch to enforce once the policy is agreed
+          # Optional Syft path (downloads + verifies a pinned release):
+          # sbom-generator: syft
+          # syft-version: "x.y.z"
+          # syft-sha256: "<sha256 of syft_x.y.z_linux_amd64.tar.gz from the release checksums>"
