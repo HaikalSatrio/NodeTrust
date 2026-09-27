@@ -1,8 +1,8 @@
-"""Data contract: DRAFT stand-in for NT-003 (owner: Haikal).
+"""Data contract: NT-003 review candidate (owner: Haikal, reviewer: Brian).
 
-Brian's tasks need a shared vocabulary to integrate, so this module fixes one.
-It follows NT-001 (D01–D07) but is NOT an agreed contract: Haikal owns
-NT-003 and any change here must go through review by both people.
+The existing wire version is preserved. Machine-readable definitions and
+compatibility rules are in schema.json and docs/contracts.md. Team review is
+required before promoting the draft wire version to a stable contract.
 
 Key rules encoded here:
 - Package identity is (ecosystem, name, version); version is always exact.
@@ -14,8 +14,10 @@ Key rules encoded here:
 from __future__ import annotations
 
 import re
+import json
 from dataclasses import dataclass
 from enum import Enum
+from importlib.resources import files
 from urllib.parse import quote, unquote
 
 from nodetrust import SCHEMA_VERSION
@@ -33,9 +35,23 @@ __all__ = [
     "parse_purl",
     "npm_purl",
     "valid_npm_name",
+    "contract_schema",
 ]
 
 ECOSYSTEM_NPM = "npm"
+
+
+def contract_schema(definition: str) -> dict:
+    """Load one local JSON Schema definition without adding a runtime validator.
+
+    Consumers may validate it with a Draft 2020-12 validator. No external
+    references or network access are needed. Each call returns a fresh object.
+    """
+    schema = json.loads(files(__package__).joinpath("schema.json").read_text(encoding="utf-8"))
+    if definition not in schema["$defs"]:
+        raise ValueError(f"unknown contract definition: {definition!r}")
+    schema["$ref"] = f"#/$defs/{definition}"
+    return schema
 
 _NPM_NAME = re.compile(r"^(?:@[a-z0-9][a-z0-9._~-]*/)?[a-z0-9._~-][a-z0-9._~-]*$")
 

@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pyflakes>=3.2", "cryptography>=41"]  # cryptography: throwaway TLS certs for the SMTP tests
+dev = ["pytest>=8", "pyflakes>=3.2", "cryptography>=41", "jsonschema[format-nongpl]>=4.18"]  # NT-003 schema/date checks; test TLS certs
 
 [project.scripts]
 nodetrust = "nodetrust.cli:main"

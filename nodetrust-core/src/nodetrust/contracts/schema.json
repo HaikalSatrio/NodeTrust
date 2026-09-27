@@ -1,0 +1,700 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NodeTrust NT-003 contract (review candidate)",
+  "x-contract-version": "2026-09.draft1",
+  "description": "Local definitions; select a named $defs entry. SBOM is the intake envelope, not the complete CycloneDX specification.",
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 214,
+      "pattern": "^(?:@[a-z0-9][a-z0-9._~-]*/)?[a-z0-9._~-]+$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "exact_version": {
+      "type": "string",
+      "pattern": "^v?(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "package_id": {
+      "type": "object",
+      "properties": {
+        "ecosystem": {
+          "const": "npm"
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "version": {
+          "$ref": "#/$defs/exact_version"
+        }
+      },
+      "required": [
+        "ecosystem",
+        "name",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "package_record": {
+      "type": "object",
+      "properties": {
+        "identity": {
+          "$ref": "#/$defs/package_id"
+        },
+        "integrity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "published_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "publisher": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "maintainers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "first_seen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_seen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "identity",
+        "integrity",
+        "published_at",
+        "publisher",
+        "maintainers",
+        "first_seen",
+        "last_seen",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "dependency_edge": {
+      "type": "object",
+      "properties": {
+        "relation": {
+          "const": "DEPENDS_ON"
+        },
+        "from": {
+          "$ref": "#/$defs/package_id"
+        },
+        "to": {
+          "type": "object",
+          "properties": {
+            "ecosystem": {
+              "const": "npm"
+            },
+            "name": {
+              "$ref": "#/$defs/name"
+            },
+            "version": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/exact_version"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "ecosystem",
+            "name",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "declared_spec": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "prod",
+            "optional",
+            "peer"
+          ]
+        },
+        "resolution": {
+          "enum": [
+            "registry_possible",
+            "client_resolved",
+            "unresolved"
+          ]
+        }
+      },
+      "required": [
+        "relation",
+        "from",
+        "to",
+        "declared_spec",
+        "kind",
+        "resolution"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "resolution": {
+                "const": "unresolved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "to": {
+                "properties": {
+                  "version": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "to": {
+                "properties": {
+                  "version": {
+                    "$ref": "#/$defs/exact_version"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "sbom": {
+      "type": "object",
+      "properties": {
+        "bomFormat": {
+          "const": "CycloneDX"
+        },
+        "specVersion": {
+          "enum": [
+            "1.4",
+            "1.5",
+            "1.6"
+          ]
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string"
+              },
+              "purl": {
+                "type": "string"
+              },
+              "bom-ref": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "dependsOn": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "ref"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "bomFormat",
+        "specVersion"
+      ],
+      "additionalProperties": true
+    },
+    "scan_submission": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{7,64}$",
+          "not": {
+            "pattern": "\\s"
+          }
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "not": {
+            "pattern": "[\\u0000-\\u001f\\u007f]"
+          }
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100,
+          "not": {
+            "pattern": "[\\u0000-\\u001f\\u007f]"
+          }
+        },
+        "sbom": {
+          "$ref": "#/$defs/sbom"
+        }
+      },
+      "required": [
+        "commit",
+        "branch",
+        "sbom"
+      ],
+      "additionalProperties": false
+    },
+    "decision": {
+      "enum": [
+        "pass",
+        "warn",
+        "gate",
+        "pending_approval",
+        "unavailable"
+      ]
+    },
+    "reason": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": true
+    },
+    "finding": {
+      "type": "object",
+      "properties": {
+        "incident_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "package": {
+          "$ref": "#/$defs/name"
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tier": {
+          "enum": [
+            "NORMAL",
+            "WATCH",
+            "INVESTIGATE",
+            "CRITICAL"
+          ]
+        },
+        "risk_score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "evidence_status": {
+          "enum": [
+            "unverified",
+            "verified",
+            "rejected"
+          ]
+        },
+        "evidence_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "exposure": {
+          "enum": [
+            "exposed",
+            "not_exposed",
+            "unknown"
+          ]
+        },
+        "is_simulation": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "$ref": "#/$defs/decision"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reason"
+          }
+        },
+        "radius": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "incident_id",
+        "title",
+        "package",
+        "versions",
+        "tier",
+        "risk_score",
+        "evidence_status",
+        "evidence_version",
+        "exposure",
+        "is_simulation",
+        "source",
+        "decision",
+        "paths",
+        "reasons",
+        "radius"
+      ],
+      "additionalProperties": true
+    },
+    "scan_identity": {
+      "type": "object",
+      "properties": {
+        "scan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "received_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sbom_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "scan_id",
+        "commit",
+        "branch",
+        "run_id",
+        "received_at",
+        "sbom_sha256"
+      ],
+      "additionalProperties": true
+    },
+    "verdict": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "2026-09.draft1"
+        },
+        "verdict_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scan": {
+          "$ref": "#/$defs/scan_identity"
+        },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mode": {
+          "enum": [
+            "monitor",
+            "enforce"
+          ]
+        },
+        "decision": {
+          "$ref": "#/$defs/decision"
+        },
+        "assessment": {
+          "enum": [
+            "ok",
+            "unknown"
+          ]
+        },
+        "exit_code": {
+          "enum": [
+            0,
+            1,
+            3
+          ]
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data_quality": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "complete",
+                "incomplete",
+                "stale"
+              ]
+            },
+            "coverage": {
+              "type": "object"
+            },
+            "freshness": {
+              "type": "object"
+            },
+            "graph_snapshot": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "coverage",
+            "freshness",
+            "graph_snapshot"
+          ],
+          "additionalProperties": true
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reason"
+          }
+        },
+        "approvals_pending": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "override": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "drift": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "scan_reused": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema_version",
+        "verdict_id",
+        "project_id",
+        "scan",
+        "policy_version",
+        "mode",
+        "decision",
+        "assessment",
+        "exit_code",
+        "labels",
+        "data_quality",
+        "findings",
+        "reasons",
+        "approvals_pending",
+        "override",
+        "created_at",
+        "drift",
+        "scan_reused"
+      ],
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "enum": [
+                  "pass",
+                  "warn"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "const": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "enum": [
+                  "gate",
+                  "pending_approval"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "const": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "decision": {
+                "const": "unavailable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exit_code": {
+                "const": 3
+              },
+              "assessment": {
+                "const": "unknown"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {}
+          },
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": true
+    }
+  }
+}
