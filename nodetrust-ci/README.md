@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@<sha>        # pin to a full commit SHA
         with: { persist-credentials: false }
-      - uses: your-org/nodetrust-ci@<sha>   # pin to a full commit SHA
+      - uses: HaikalSatrio/NodeTrust/nodetrust-ci@<sha>   # pin to a full commit SHA
         with:
           api-url: ${{ vars.NODETRUST_API_URL }}
           project-id: ${{ vars.NODETRUST_PROJECT_ID }}

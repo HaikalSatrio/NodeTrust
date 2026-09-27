@@ -3,19 +3,19 @@
 ## Local development
 
 ```bash
-git clone <nodetrust-core>            # and nodetrust-ci next to it
-cd nodetrust-core
+git clone https://github.com/HaikalSatrio/NodeTrust
+cd NodeTrust/nodetrust-core
 python -m venv .venv && . .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 cp .env.example .env                  # optional NODETRUST_ADMIN_TOKEN (32+ chars); never commit .env
 python scripts/check.py               # must print PASS
 ```
 
-With `nodetrust-ci` cloned in the same parent directory, `check.py` also runs the local end-to-end suite
+Because `nodetrust-ci` sits next to this folder, `check.py` also runs the local end-to-end suite
 (`e2e/`: the real CI client against a running core over 127.0.0.1). Without it, that step is skipped.
 The same venv also runs `nodetrust-ci`'s gate: `cd ../nodetrust-ci && python scripts/check.py`.
 
-These exact steps were run on 27 Sep 2026 from fresh clones and empty venvs, installing from PyPI: Windows
+These steps were run on 27 Sep 2026 from fresh clones and empty venvs, installing from PyPI: Windows
 (Python 3.12.4) and Linux (`python:3.11-slim` 3.11.16 and `python:3.12-slim` 3.12.14). Both gates printed
 PASS, including lint and the e2e suite.
 

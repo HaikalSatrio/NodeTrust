@@ -63,11 +63,13 @@ def workflows_pinned() -> list[str]:
     import re as _re
 
     bad = []
-    for wf in sorted((ROOT / ".github" / "workflows").glob("*.y*ml")):
+    # this project's own workflows, and the repository root's when it lives in the NodeTrust repository
+    dirs = [d for d in (ROOT / ".github" / "workflows", ROOT.parent / ".github" / "workflows") if d.is_dir()]
+    for wf in sorted(p for d in dirs for p in d.glob("*.y*ml")):
         for i, line in enumerate(wf.read_text(encoding="utf-8").splitlines(), 1):
             m = _re.search(r"uses:\s*([^\s#]+)", line)
             if m and not m.group(1).startswith("./") and not _re.fullmatch(r"[0-9a-f]{40}", m.group(1).split("@")[-1]):
-                bad.append(f"{wf.relative_to(ROOT)}:{i}: '{m.group(1)}' is not pinned to a full commit SHA")
+                bad.append(f"{wf.relative_to(ROOT.parent)}:{i}: '{m.group(1)}' is not pinned to a full commit SHA")
     return bad
 
 

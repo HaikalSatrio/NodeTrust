@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
         with:
           persist-credentials: false
-      - uses: your-org/nodetrust-ci@v0     # pin to a full commit SHA in real use
+      - uses: HaikalSatrio/NodeTrust/nodetrust-ci@<full-commit-sha>  # the action lives in a subfolder
         with:
           api-url: ${{ vars.NODETRUST_API_URL }}
           project-id: ${{ vars.NODETRUST_PROJECT_ID }}

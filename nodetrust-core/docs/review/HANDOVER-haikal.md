@@ -6,12 +6,10 @@
 ## 1. Cara mengambil dan menjalankan
 
 ```bash
-# dua repo berdampingan dalam satu folder
-git clone <nodetrust-core> && git clone <nodetrust-ci>
-cd nodetrust-core && git switch brian/mvp-review
-cd ../nodetrust-ci && git switch brian/mvp-review
-cd ../nodetrust-core && pip install -e ".[dev]" && python scripts/check.py   # harus PASS
-cd ../nodetrust-ci && python scripts/check.py                                # harus PASS
+git clone https://github.com/HaikalSatrio/NodeTrust && cd NodeTrust
+git switch brian/mvp-review
+cd nodetrust-core && pip install -e ".[dev]" && python scripts/check.py   # harus PASS
+cd ../nodetrust-ci && python scripts/check.py                             # harus PASS
 ```
 
 - `main` hanya berisi commit awal kosong. Semua pekerjaan ada di `brian/mvp-review`, jadi

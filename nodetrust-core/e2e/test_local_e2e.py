@@ -1,7 +1,7 @@
 """Local end-to-end: nodetrust-ci (subprocess, real HTTP over 127.0.0.1) against a
 running nodetrust-core seeded with the synthetic demo data. No internet.
 
-Needs nodetrust-ci cloned next to nodetrust-core (same parent directory); skipped otherwise.
+Needs nodetrust-ci next to nodetrust-core (as in the NodeTrust repository); skipped otherwise.
 Run from nodetrust-core:  python -m pytest e2e -q -p no:asyncio
 """
 
@@ -18,7 +18,7 @@ import pytest
 CORE = Path(__file__).resolve().parents[1]
 CI_REPO = CORE.parent / "nodetrust-ci"
 if not (CI_REPO / "src" / "nodetrust_ci" / "cli.py").is_file():
-    pytest.skip("nodetrust-ci is not cloned next to nodetrust-core", allow_module_level=True)
+    pytest.skip("nodetrust-ci is not next to nodetrust-core", allow_module_level=True)
 sys.path.insert(0, str(CORE / "src"))
 
 import uvicorn  # noqa: E402
