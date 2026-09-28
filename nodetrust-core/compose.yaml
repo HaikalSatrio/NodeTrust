@@ -1,0 +1,75 @@
+# Self-host (MVP): one API process + one worker on a shared SQLite volume (D02).
+# Verified on 26 Sep 2026: build, `up` with healthy API and running worker, demo seeded inside the
+# container, API reached from the host, read-only root filesystem, non-root user; Neo4j profile healthy
+# and `scripts/check_neo4j.py` OK. A human should still repeat this on their own machine (NT-002 review).
+#
+#   cp .env.example .env   # NODETRUST_ADMIN_TOKEN: 32+ random characters, or empty to disable
+#   docker compose up --build
+#
+# The API binds to 127.0.0.1 only; put a TLS reverse proxy in front for remote CI access.
+services:
+  api:
+    build: .
+    command: ["nodetrust", "serve", "--host", "0.0.0.0", "--port", "8080", "--i-know-this-is-exposed"]
+    env_file: .env
+    environment:
+      NODETRUST_DB_PATH: /data/nodetrust.db
+      NODETRUST_ALERT_OUTBOX_DIR: /data/outbox
+    ports:
+      - "127.0.0.1:${NODETRUST_PORT:-8080}:8080"  # host port configurable when 8080 is taken
+    volumes:
+      - nodetrust-data:/data
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/readyz', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build: .
+    command: ["nodetrust", "worker", "--interval", "30"]
+    env_file: .env
+    environment:
+      NODETRUST_DB_PATH: /data/nodetrust.db
+      NODETRUST_ALERT_OUTBOX_DIR: /data/outbox
+    volumes:
+      - nodetrust-data:/data
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Neo4j (D02). The MVP graph still runs on the SQLite + networkx stand-in, so Neo4j is optional and
+  # only starts with its profile. GDS and its licence are decided in NT-013 (Haikal).
+  #   docker compose --profile neo4j up -d neo4j
+  #   python scripts/check_neo4j.py
+  # Community edition, bound to 127.0.0.1. NEO4J_PASSWORD (8+ characters) comes from .env.
+  # Pinned by index digest (5.26.31 on 26 Sep 2026); bump tag and digest together (NT-044).
+  neo4j:
+    image: neo4j:5.26-community@sha256:5eb12ad77fa46ab73e23df9ea1f43f5c0f2a79523435577648e046be042b9b93
+    profiles: ["neo4j"]
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-}
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+    volumes:
+      - neo4j-data:/data
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p \"$${NEO4J_AUTH#neo4j/}\" 'RETURN 1' >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  nodetrust-data:
+  neo4j-data:

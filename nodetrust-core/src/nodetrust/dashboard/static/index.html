@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NodeTrust Dashboard</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">NodeTrust <span class="muted">MVP</span></div>
+    <div id="badges" class="badges" aria-live="polite"></div>
+    <form id="login" class="login" autocomplete="off">
+      <label>Project ID <input id="pid" name="pid" required spellcheck="false"></label>
+      <label>API key <input id="key" name="key" type="password" required spellcheck="false"></label>
+      <button type="submit">Connect</button>
+    </form>
+    <div id="session" class="session hidden">
+      <span id="who" class="muted"></span>
+      <button id="logout" type="button">Forget key</button>
+    </div>
+  </header>
+
+  <div id="error" class="error hidden" role="alert"></div>
+
+  <nav id="tabs" class="tabs hidden" role="tablist" aria-label="Views">
+    <button role="tab" id="tab-overview" data-tab="overview" aria-controls="view-overview" aria-selected="true" tabindex="0">Overview</button>
+    <button role="tab" id="tab-graph" data-tab="graph" aria-controls="view-graph" aria-selected="false" tabindex="-1">Graph &amp; impact</button>
+    <button role="tab" id="tab-alerts" data-tab="alerts" aria-controls="view-alerts" aria-selected="false" tabindex="-1">Alerts &amp; approvals</button>
+    <button role="tab" id="tab-policy" data-tab="policy" aria-controls="view-policy" aria-selected="false" tabindex="-1">Policy</button>
+    <button role="tab" id="tab-audit" data-tab="audit" aria-controls="view-audit" aria-selected="false" tabindex="-1">Audit</button>
+  </nav>
+
+  <main>
+    <section id="intro" class="panel">
+      <h1>Dependency exposure dashboard</h1>
+      <p>Connect with a project ID and a project API key. The key is kept only in this browser tab
+        (sessionStorage) and sent to this NodeTrust server.</p>
+      <p class="muted">Scores are heuristic, not probabilities. A vulnerability advisory is not evidence of compromise.
+        Packages that are not in the graph are unknown, not safe.</p>
+    </section>
+
+    <section id="view-overview" class="view hidden" role="tabpanel" aria-labelledby="tab-overview">
+      <div class="row">
+        <div class="panel grow">
+          <h2>Scans</h2>
+          <div id="scans"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="panel grow"><h2>Verdict</h2><div id="verdict"></div></div>
+      </div>
+      <div class="row">
+        <div class="panel grow"><h2>Baseline report</h2><div id="report"></div></div>
+        <div class="panel grow"><h2>Drift since previous scan</h2><div id="drift"></div></div>
+      </div>
+    </section>
+
+    <section id="view-graph" class="view hidden" role="tabpanel" aria-labelledby="tab-graph">
+      <div class="row">
+        <div class="panel grow graph-panel">
+          <h2>Project dependency graph</h2>
+          <p class="muted">Select a package (click, or Tab then Enter) to see its impact paths. <button id="toggle-list" type="button">Show as list</button></p>
+          <div id="graph-note" class="muted"></div>
+          <div id="graph" class="graph" role="group" aria-label="Dependency graph"></div>
+          <div id="graph-list" class="hidden"></div>
+        </div>
+        <aside class="panel side" aria-live="polite">
+          <h2>Selected package</h2>
+          <div id="node-detail"><p class="muted">Nothing selected.</p></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="view-alerts" class="view hidden" role="tabpanel" aria-labelledby="tab-alerts">
+      <div class="panel"><h2>Approvals</h2><div id="approvals"></div></div>
+      <div class="panel"><h2>Alerts</h2><div id="alerts"></div></div>
+    </section>
+
+    <section id="view-policy" class="view hidden" role="tabpanel" aria-labelledby="tab-policy">
+      <div class="panel"><h2>Current policy</h2><div id="policy"></div></div>
+      <div class="panel"><h2>How decisions are made</h2>
+        <ul class="matrix">
+          <li><b>NORMAL</b>: pass (not a certification of safety).</li>
+          <li><b>WATCH</b>: warn; e-mail only if the project enables it.</li>
+          <li><b>INVESTIGATE</b> or unverified <b>CRITICAL</b>: warn, e-mail, triage. Scores alone never block.</li>
+          <li>Verified <b>CRITICAL</b>, exact version, small radius: monitor warns; enforce gates only if pre-authorised.</li>
+          <li>Verified <b>CRITICAL</b> with large or unknown radius: escalate; enforce holds for approval only if pre-authorised.</li>
+          <li>Stale or incomplete data: monitor warns UNKNOWN; enforce reports "assessment unavailable".</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="view-audit" class="view hidden" role="tabpanel" aria-labelledby="tab-audit">
+      <div class="panel"><h2>Audit log</h2><div id="audit"></div></div>
+    </section>
+  </main>
+</body>
+</html>
