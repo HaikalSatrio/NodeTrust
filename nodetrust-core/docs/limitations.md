@@ -8,7 +8,11 @@
 - **Forecasts are simulations** (stand-in), not validated predictions.
 - **Advisories are not compromise evidence.** Vulnerability blocking is deferred (D04).
 - **The registry graph answers "could pull in"**, not "does pull in". Only the client SBOM gives exact exposure.
-- **Graph components are stand-ins** (SQLite + networkx) pending NT-004/008/012/013. They are sized for
+- **Graph components are stand-ins** (SQLite + networkx) pending NT-008/012/013. NT-004 now has an
+  isolated real-Neo4j spike ([evidence](tasks/NT-004.md)), not a production storage migration.
+  NT-005 resolves all observed matching candidates with explicit unresolved/truncated output
+  ([semantics](tasks/NT-005.md)); this is not an npm installation or peer constraint solver.
+  The runtime graph components are sized for
   thousands of nodes. The 500K-node target is NT-036/NT-043.
 - **Live data paths are partly verified.** The npm change feed, packument fetch, the OSV `all.zip` import and
   the OSV API ran against the real services on 26 Sep 2026 (`docs/audit/live-checks.md`). Real npm packuments were also replayed offline from a local

@@ -90,6 +90,10 @@ kind is prod, optional or peer.
 | unresolved | null | Preserve declaration without inventing an exact target |
 
 Registry storage keeps dst_name/spec/kind and resolves candidates at query time.
+NT-005 adds `resolve_registry` for a bounded closure of all observed candidates,
+and `dependencies_of` exposes `candidate_versions` alongside the legacy highest
+`possible_version`. Unresolved reasons and truncation are explicit; see
+[NT-005](tasks/NT-005.md). The wire schema/version remains unchanged.
 SBOM edges connect local bom-refs. The reference schema expresses their common
 meaning without claiming identical persistence formats. Aliases retain the
 declaration but identity uses the actual target package. Cycles are valid input;

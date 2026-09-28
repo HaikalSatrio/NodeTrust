@@ -29,7 +29,11 @@ def make_certs(directory: Path) -> tuple[Path, Path, Path]:
         b = (x509.CertificateBuilder().subject_name(subject).issuer_name(issuer).public_key(pub)
              .serial_number(x509.random_serial_number())
              .not_valid_before(now - dt.timedelta(minutes=5)).not_valid_after(now + dt.timedelta(days=1))
-             .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True))
+             .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True)
+             # Python 3.13+ enables strict X.509 checks; generate a complete chain.
+             .add_extension(x509.SubjectKeyIdentifier.from_public_key(pub), critical=False)
+             .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(signer.public_key()),
+                            critical=False))
         if san:
             b = b.add_extension(x509.SubjectAlternativeName(san), critical=False)
         if ca:

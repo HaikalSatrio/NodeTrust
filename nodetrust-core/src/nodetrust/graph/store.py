@@ -21,7 +21,8 @@ from dataclasses import dataclass, field
 
 from nodetrust.contracts import ECOSYSTEM_NPM, PackageId
 from nodetrust.registry.normalize import PackumentRecord
-from nodetrust.semver import max_satisfying, parse_spec, satisfies, sort_versions
+from nodetrust.semver import parse_spec, satisfies, sort_versions
+from nodetrust.resolver import resolve_declaration
 from nodetrust.storage import dumps, utcnow
 
 
@@ -104,10 +105,11 @@ def dependencies_of(con: sqlite3.Connection, pid: PackageId) -> list[dict]:
                          (pid.ecosystem, pid.name, pid.version)):
         sp = parse_spec(e["spec"])
         target = sp.target_name or e["dst_name"]
-        possible = max_satisfying(versions_of(con, target, pid.ecosystem), sp) if sp.resolvable else None
+        resolved = resolve_declaration(e["dst_name"], e["spec"], versions_of(con, target, pid.ecosystem))
+        possible = resolved["candidate_versions"][-1] if resolved["candidate_versions"] else None
         out.append({"name": e["dst_name"], "spec": e["spec"], "kind": e["kind"], "target": target,
                     "possible_version": possible,
-                    "resolution": "registry_possible" if possible else "unresolved"})
+                    **resolved})
     return out
 
 

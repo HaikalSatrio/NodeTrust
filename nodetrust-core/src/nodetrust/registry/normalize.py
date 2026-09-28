@@ -111,7 +111,8 @@ def _deps(doc: dict, errors: list[str], where: str) -> list[DepRecord]:
             # record such entries once, as optional.
             if kind == "prod" and isinstance(optional, dict) and dname in optional:
                 continue
-            out[(dname_l, k)] = DepRecord(dname_l, spec.strip()[:200], k, parse_spec(spec).kind)
+            # Truncating a range can change its meaning and fabricate candidates.
+            out[(dname_l, k)] = DepRecord(dname_l, spec.strip(), k, parse_spec(spec).kind)
     return sorted(out.values(), key=lambda d: (d.kind, d.name))
 
 

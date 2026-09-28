@@ -72,6 +72,7 @@ To work on the graph store, start the local Neo4j Community service:
 echo "NEO4J_PASSWORD=<8+ characters>" >> .env      # never commit .env
 docker compose --profile neo4j up -d neo4j         # Browser: http://127.0.0.1:7474, Bolt: 127.0.0.1:7687
 python scripts/check_neo4j.py                      # prints OK when Neo4j answers RETURN 1
+python scripts/spike_nt004.py                      # validates the manual dependency graph on real Neo4j
 ```
 
 `check_neo4j.py` uses only the standard library, talks to loopback only and never prints the password.

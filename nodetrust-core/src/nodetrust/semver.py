@@ -1,8 +1,7 @@
 """Semver ordering and npm range matching.
 
-Stand-in for the resolver part of NT-005 (owner: Haikal). Brian's tasks only need
-(a) exact-version ordering and (b) "does version V satisfy spec S". Full client
-resolution (lockfile semantics, peer resolution) stays in NT-005.
+Range matcher used by the NT-005 registry resolver. Exact client resolution
+comes from the existing lockfile/SBOM path, not from a registry range guess.
 
 Semantics follow node-semver (non-loose):
 - comparators, x-ranges, tilde, caret, hyphen ranges and '||' unions;
@@ -148,12 +147,16 @@ def _parse_partial(text: str) -> _Partial:
         return None if v is None or v in _X else int(v)
 
     maj, mi, pa = num("maj"), num("min"), num("pat")
-    # "1.x.3" style: anything after a wildcard is a wildcard.
+    if ((m.group("maj") in _X and any(m.group(g) not in _X | {None} for g in ("min", "pat")))
+            or (m.group("min") in _X and m.group("pat") not in _X | {None})):
+        raise SemverError("numeric component after wildcard")
     if maj is None:
         mi = pa = None
     elif mi is None:
         pa = None
     pre = tuple(m.group("pre").split(".")) if m.group("pre") and pa is not None else ()
+    if any(p.isdigit() and len(p) > 1 and p.startswith("0") for p in pre):
+        raise SemverError("numeric prerelease identifiers cannot have leading zeros")
     return _Partial(maj, mi, pa, pre)
 
 
@@ -211,8 +214,7 @@ def _desugar(op: str | None, p: _Partial) -> list[Comparator]:
 
 def _parse_set(text: str) -> list[Comparator]:
     text = text.strip()
-    if text in ("", "*", "x", "X", "latest"):
-        # 'latest' is a dist-tag, handled by parse_spec before we get here.
+    if text in ("", "*", "x", "X"):
         return [(">=", _v(0, 0, 0))]
     hy = re.match(r"^(\S+)\s+-\s+(\S+)$", text)
     if hy:
@@ -263,11 +265,16 @@ _UNSUPPORTED_PREFIXES = ("file:", "git+", "git:", "http:", "https:", "github:", 
 def parse_spec(raw: str) -> Spec:
     s = (raw or "").strip()
     if s.startswith("npm:"):
+        from nodetrust.contracts import valid_npm_name
+
         body = s[4:]
         at = body.rfind("@")
         if at <= 0:
-            return Spec(raw, "alias", body.lower(), ((( ">=", _v(0, 0, 0)),),))
+            # An omitted alias spec means a dist-tag lookup, not any version.
+            return Spec(raw, "unsupported", body.lower())
         name, rng = body[:at].lower(), body[at + 1:]
+        if not valid_npm_name(name) or not rng:
+            return Spec(raw, "unsupported", name)
         inner = parse_spec(rng)
         if inner.kind != "range":
             return Spec(raw, "unsupported", name)
