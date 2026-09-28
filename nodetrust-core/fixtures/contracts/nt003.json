@@ -1,0 +1,78 @@
+{
+  "package_record": {
+    "identity": {
+      "ecosystem": "npm",
+      "name": "@ntdemo/logger",
+      "version": "1.2.3-beta.1+demo"
+    },
+    "integrity": null,
+    "published_at": null,
+    "publisher": null,
+    "maintainers": [
+      "ntdemo-maintainer"
+    ],
+    "first_seen": "2026-09-27T00:00:00Z",
+    "last_seen": "2026-09-27T00:00:00Z",
+    "source": "synthetic-demo"
+  },
+  "dependency_edge": {
+    "relation": "DEPENDS_ON",
+    "from": {
+      "ecosystem": "npm",
+      "name": "ntdemo-web",
+      "version": "1.0.0"
+    },
+    "to": {
+      "ecosystem": "npm",
+      "name": "@ntdemo/logger",
+      "version": "1.2.3-beta.1+demo"
+    },
+    "declared_spec": "1.2.3-beta.1+demo",
+    "kind": "prod",
+    "resolution": "client_resolved"
+  },
+  "scan_submission": {
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "branch": "nt003-demo",
+    "run_id": "ntdemo-run.1",
+    "sbom": {
+      "bomFormat": "CycloneDX",
+      "specVersion": "1.5",
+      "metadata": {
+        "component": {
+          "type": "application",
+          "name": "ntdemo-project",
+          "bom-ref": "root"
+        }
+      },
+      "components": [
+        {
+          "type": "library",
+          "name": "@ntdemo/logger",
+          "version": "1.2.3-beta.1+demo",
+          "purl": "pkg:npm/%40ntdemo/logger@1.2.3-beta.1%2Bdemo",
+          "bom-ref": "logger"
+        }
+      ],
+      "dependencies": [
+        {
+          "ref": "root",
+          "dependsOn": [
+            "logger"
+          ]
+        },
+        {
+          "ref": "logger",
+          "dependsOn": []
+        }
+      ]
+    }
+  },
+  "error": {
+    "error": {
+      "code": "validation_error",
+      "message": "Synthetic invalid input",
+      "details": []
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+ "bomFormat": "CycloneDX",
+ "specVersion": "1.5",
+ "version": 1,
+ "metadata": {
+  "component": {
+   "type": "application",
+   "name": "demo-clean",
+   "bom-ref": "root"
+  }
+ },
+ "components": [
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-cli@0.3.0",
+   "name": "ntdemo-cli",
+   "version": "0.3.0",
+   "purl": "pkg:npm/ntdemo-cli@0.3.0"
+  },
+  {
+   "type": "library",
+   "bom-ref": "ntdemo-date@1.0.0",
+   "name": "ntdemo-date",
+   "version": "1.0.0",
+   "purl": "pkg:npm/ntdemo-date@1.0.0"
+  }
+ ],
+ "dependencies": [
+  {
+   "ref": "root",
+   "dependsOn": [
+    "ntdemo-cli@0.3.0"
+   ]
+  },
+  {
+   "ref": "ntdemo-cli@0.3.0",
+   "dependsOn": [
+    "ntdemo-date@1.0.0"
+   ]
+  }
+ ]
+}

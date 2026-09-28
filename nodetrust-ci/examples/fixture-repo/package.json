@@ -1,0 +1,13 @@
+{
+  "name": "demo-exposed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SYNTHETIC fixture project for nodetrust-ci tests. The ntdemo-* packages do not exist on npm.",
+  "dependencies": {
+    "ntdemo-date": "^1.0.1",
+    "ntdemo-web": "^5.0.0"
+  },
+  "devDependencies": {
+    "ntdemo-cli": "^0.3.0"
+  }
+}

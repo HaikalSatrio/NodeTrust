@@ -1,0 +1,42 @@
+{
+ "_id": "ntdemo-web",
+ "name": "ntdemo-web",
+ "dist-tags": {
+  "latest": "5.0.0"
+ },
+ "maintainers": [
+  {
+   "name": "alice-demo"
+  }
+ ],
+ "time": {
+  "modified": "2026-06-01T10:00:00.000Z",
+  "5.0.0": "2026-06-01T10:00:00.000Z"
+ },
+ "versions": {
+  "5.0.0": {
+   "name": "ntdemo-web",
+   "version": "5.0.0",
+   "dependencies": {
+    "ntdemo-core": "^1.1.0",
+    "@ntdemo/logger": "^3.0.0"
+   },
+   "maintainers": [
+    {
+     "name": "alice-demo"
+    }
+   ],
+   "_npmUser": {
+    "name": "alice-demo"
+   },
+   "dist": {
+    "integrity": "sha512-DEMO-ntdemo-web-5.0.0"
+   },
+   "repository": {
+    "type": "git",
+    "url": "git+https://example.invalid/ntdemo-web.git"
+   }
+  }
+ },
+ "description": "SYNTHETIC demo package - not a real npm package"
+}

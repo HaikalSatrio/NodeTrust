@@ -1,0 +1,18 @@
+{
+  "provenance": "Synthetic npm-shaped metadata; no real package or compromise claims.",
+  "root": "npm:ntdemo-app@1.0.0",
+  "seed": "npm:@ntdemo/leaf@1.0.0",
+  "expected_nodes": 5,
+  "expected_edges": 6,
+  "expected_dependents": [
+    {"package": "npm:ntdemo-left@1.0.0", "hop": 1},
+    {"package": "npm:ntdemo-right@1.0.0", "hop": 1},
+    {"package": "npm:ntdemo-app@1.0.0", "hop": 2}
+  ],
+  "packuments": [
+    {"name": "ntdemo-app", "versions": {"1.0.0": {"dependencies": {"ntdemo-left": "^1.0.0", "ntdemo-right": "1.0.0"}, "optionalDependencies": {"ntdemo-missing": "^1"}}}},
+    {"name": "ntdemo-left", "versions": {"1.0.0": {"dependencies": {"leaf-alias": "npm:@ntdemo/leaf@^1.0.0"}}}},
+    {"name": "ntdemo-right", "versions": {"1.0.0": {"peerDependencies": {"@ntdemo/leaf": "1.0.0"}}}},
+    {"name": "@ntdemo/leaf", "versions": {"1.0.0": {"dependencies": {"ntdemo-left": "1.0.0"}}, "1.1.0": {}}}
+  ]
+}

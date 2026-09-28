@@ -1,0 +1,89 @@
+{
+ "_id": "ntdemo-utils",
+ "name": "ntdemo-utils",
+ "dist-tags": {
+  "latest": "2.1.1"
+ },
+ "maintainers": [
+  {
+   "name": "alice-demo"
+  }
+ ],
+ "time": {
+  "modified": "2026-09-01T10:00:00.000Z",
+  "2.0.0": "2025-11-01T10:00:00.000Z",
+  "2.1.0": "2026-03-01T10:00:00.000Z",
+  "2.1.1": "2026-09-01T10:00:00.000Z"
+ },
+ "versions": {
+  "2.0.0": {
+   "name": "ntdemo-utils",
+   "version": "2.0.0",
+   "dependencies": {},
+   "maintainers": [
+    {
+     "name": "alice-demo"
+    }
+   ],
+   "_npmUser": {
+    "name": "alice-demo"
+   },
+   "dist": {
+    "integrity": "sha512-DEMO-ntdemo-utils-2.0.0"
+   },
+   "repository": {
+    "type": "git",
+    "url": "git+https://example.invalid/ntdemo-utils.git"
+   }
+  },
+  "2.1.0": {
+   "name": "ntdemo-utils",
+   "version": "2.1.0",
+   "dependencies": {},
+   "maintainers": [
+    {
+     "name": "alice-demo"
+    }
+   ],
+   "_npmUser": {
+    "name": "alice-demo"
+   },
+   "dist": {
+    "integrity": "sha512-DEMO-ntdemo-utils-2.1.0"
+   },
+   "repository": {
+    "type": "git",
+    "url": "git+https://example.invalid/ntdemo-utils.git"
+   }
+  },
+  "2.1.1": {
+   "name": "ntdemo-utils",
+   "version": "2.1.1",
+   "dependencies": {
+    "ntdemo-helper-x": "^0.0.1"
+   },
+   "maintainers": [
+    {
+     "name": "alice-demo"
+    },
+    {
+     "name": "mallory-demo"
+    }
+   ],
+   "_npmUser": {
+    "name": "mallory-demo"
+   },
+   "dist": {
+    "integrity": "sha512-DEMO-ntdemo-utils-2.1.1"
+   },
+   "repository": {
+    "type": "git",
+    "url": "git+https://example.invalid/ntdemo-utils.git"
+   },
+   "scripts": {
+    "postinstall": "node setup.js"
+   }
+  }
+ },
+ "description": "SYNTHETIC demo package - not a real npm package"
+}
